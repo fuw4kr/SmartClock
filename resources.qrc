@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/icons/alarmclock.png</file>
+        <file>resources/icons/clock.png</file>
+        <file>resources/icons/timer.png</file>
+        <file>resources/icons/stopwatch.png</file>
+    </qresource>
+    <qresource prefix="/s">
+        <file>resources/sounds/soundtimer.wav</file>
+    </qresource>
+</RCC>
