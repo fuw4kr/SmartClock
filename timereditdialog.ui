@@ -33,17 +33,89 @@
       <item>
        <widget class="QLineEdit" name="nameEdit"/>
       </item>
+      <item>
+       <widget class="QComboBox" name="comboType"/>
+      </item>
+      <item>
+       <widget class="QWidget" name="widget_3" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,1">
+         <item>
+          <widget class="QLabel" name="labelGroup">
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Group:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboGroup"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupTimeMode">
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="title">
+      <string>Set time as:</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QRadioButton" name="radioDuration">
+        <property name="font">
+         <font>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Duration (from now)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioTargetTime">
+        <property name="font">
+         <font>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Target time (HH:MM)</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
    <item>
     <widget class="QWidget" name="widget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="layoutDirection">
+      <enum>Qt::LayoutDirection::LeftToRight</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0">
       <property name="spacing">
        <number>9</number>
       </property>
+      <property name="leftMargin">
+       <number>9</number>
+      </property>
       <item>
-       <widget class="QSpinBox" name="spinHours"/>
+       <widget class="QSpinBox" name="spinHours">
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="lblHours">
@@ -56,10 +128,17 @@
         <property name="text">
          <string>H</string>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="spinMinutes"/>
+       <widget class="QSpinBox" name="spinMinutes">
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="lblMinutes">
@@ -75,7 +154,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="spinSeconds"/>
+       <widget class="QSpinBox" name="spinSeconds">
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QLabel" name="lblSeconds">
@@ -88,9 +171,45 @@
         <property name="text">
          <string>S</string>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDateTimeEdit" name="targetTimeEdit">
+     <property name="font">
+      <font>
+       <pointsize>15</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
+     </property>
+     <property name="date">
+      <date>
+       <year>2000</year>
+       <month>1</month>
+       <day>3</day>
+      </date>
+     </property>
+     <property name="time">
+      <time>
+       <hour>20</hour>
+       <minute>37</minute>
+       <second>43</second>
+      </time>
+     </property>
+     <property name="currentSection">
+      <enum>QDateTimeEdit::Section::HourSection</enum>
+     </property>
+     <property name="displayFormat">
+      <string>hh:mm</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -99,7 +218,7 @@
       <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
      <property name="centerButtons">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
     </widget>
    </item>

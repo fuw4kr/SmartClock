@@ -17,6 +17,14 @@ public:
 
     QString getName() const;
     int getTotalSeconds() const;
+    QString getType() const;
+    QString getGroup() const;
+
+private slots:
+    void updateInputMode();
+
+signals:
+    void timerAdded(const QString &name, int duration, const QString &type, const QString &group);
 
 private:
     Ui::TimerEditDialog *ui;

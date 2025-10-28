@@ -18,10 +18,13 @@ public:
 
 signals:
     void restoreTimer(const TimerData &timer);
+    void historyChanged();
 
 private slots:
     void updateTable();
     void onCloseClicked();
+    void onRestoreSelected();
+    void onDeleteSelected();
 
 private:
     Ui::HistoryTimerWindow *ui;

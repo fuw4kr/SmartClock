@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowTitle("Smart Clock");
+
     clockWindow     = new ClockWindow(this);
     alarmWindow    = new AlarmWindow(this);
     stopwatchWindow = new StopwatchWindow(this);
@@ -30,3 +32,4 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+

@@ -1,5 +1,5 @@
 #include "timerwindow.h"
-#include "ui_timerwindow.h"
+#include "ui_TimerWindow.h"
 #include "timereditdialog.h"
 #include "settingstimerdialog.h"
 #include "historytimerwindow.h"
@@ -20,6 +20,36 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QSettings>
+#include <QShortcut>
+
+#ifdef Q_OS_WIN
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <shobjidl.h>
+
+static void setTaskbarProgress(QWidget *widget, int value, int maximum)
+{
+    ITaskbarList3* pTaskbar = nullptr;
+    HRESULT hr = CoCreateInstance(CLSID_TaskbarList, nullptr, CLSCTX_ALL,
+                                  IID_ITaskbarList3, (void**)&pTaskbar);
+    if (SUCCEEDED(hr) && pTaskbar) {
+        pTaskbar->HrInit();
+
+        QWidget *topWidget = widget->window();
+        HWND hwnd = reinterpret_cast<HWND>(topWidget->winId());
+
+        if (maximum <= 0) {
+            pTaskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+        } else {
+            pTaskbar->SetProgressState(hwnd, TBPF_NORMAL);
+            pTaskbar->SetProgressValue(hwnd, value, maximum);
+        }
+
+        pTaskbar->Release();
+    }
+}
+#endif
 
 TimerWindow::TimerWindow(QWidget *parent)
     : QWidget(parent)
@@ -27,7 +57,41 @@ TimerWindow::TimerWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    ui->tableTimers->setHorizontalHeaderLabels({"Name","Remaining time","Status"});
+    setWindowTitle("Timer");
+
+
+    trayIcon = new QSystemTrayIcon(this);
+    trayIcon->setIcon(QIcon(":/resources/icons/timertray.png"));
+    trayIcon->setToolTip("Smart Timer — no active timers");
+
+    trayMenu = new QMenu(this);
+
+    trayMenu->addAction("Open", this, [this]() {
+        QWidget *mainWin = this->window();
+        if (mainWin) {
+            mainWin->show();
+            mainWin->setWindowState((mainWin->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            mainWin->raise();
+            mainWin->activateWindow();
+        }
+    });
+
+    trayMenu->addAction("Exit", qApp, &QCoreApplication::quit);
+    trayIcon->setContextMenu(trayMenu);
+
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &TimerWindow::onTrayActivated);
+    trayIcon->show();
+
+    connect(&manager, &TimerManager::timersUpdated, this, &TimerWindow::updateTrayTooltip);
+
+    trayUpdateTimer = new QTimer(this);
+    connect(trayUpdateTimer, &QTimer::timeout, this, &TimerWindow::updateTrayTooltip);
+    trayUpdateTimer->start(1000);
+
+    ui->tableTimers->setColumnCount(4);
+    ui->tableTimers->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    ui->tableTimers->setHorizontalHeaderLabels({"Name", "Remaining", "Status", "Type"});
     ui->tableTimers->horizontalHeader()->setStretchLastSection(true);
     ui->tableTimers->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableTimers->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -43,10 +107,36 @@ TimerWindow::TimerWindow(QWidget *parent)
     connect(&manager, &TimerManager::timersUpdated, this, &TimerWindow::updateTable);
     connect(ui->tableTimers, &QTableWidget::itemDoubleClicked, this, &TimerWindow::onEditTimer);
 
-    connect(&manager, &TimerManager::timerFinished, this, [this](const QString &name){
-        if (playSound) {
+    auto delShortcut = new QShortcut(QKeySequence(Qt::Key_Delete), this);
+    connect(delShortcut, &QShortcut::activated, this, &TimerWindow::onDeleteTimer);
+
+    auto spaceShortcut = new QShortcut(QKeySequence(Qt::Key_Space), this);
+    connect(spaceShortcut, &QShortcut::activated, this, &TimerWindow::onStartPauseTimer);
+
+    connect(&manager, &TimerManager::timerFinished, this, [this](const QString &name) {
+        QSettings settings("SmartTimerApp", "SmartTimer");
+        bool soundEnabled = settings.value("playSound", true).toBool();
+
+        QString melody = settings.value("melodySoundPath").toString();
+        QString reminder = settings.value("reminderSoundPath").toString();
+
+        QString type = "Normal";
+        for (const auto &t : manager.getTimers()) {
+            if (t.name == name) {
+                type = t.type;
+                break;
+            }
+        }
+
+        if (soundEnabled) {
+            QString soundPath = "qrc:/s/resources/sounds/soundtimer.wav";
+            if (type == "Melody" && !melody.isEmpty())
+                soundPath = QUrl::fromLocalFile(melody).toString();
+            else if (type == "Reminder" && !reminder.isEmpty())
+                soundPath = QUrl::fromLocalFile(reminder).toString();
+
             auto *sound = new QSoundEffect(this);
-            sound->setSource(QUrl("qrc:/s/resources/sounds/soundtimer.wav"));
+            sound->setSource(QUrl(soundPath));
             sound->setVolume(1.0);
             sound->play();
             QTimer::singleShot(3000, sound, &QObject::deleteLater);
@@ -59,8 +149,35 @@ TimerWindow::TimerWindow(QWidget *parent)
                                      "Could not open:\n" + actionPath);
         }
 
-        QMessageBox::information(this, "Timer Finished",
-                                 QString("Timer \"%1\" has finished!").arg(name));
+        QString msg;
+        if (type == "Melody")
+            msg = QString("Timer \"%1\" finished with melody!").arg(name);
+        else if (type == "Reminder")
+            msg = QString("Reminder \"%1\" time is up!").arg(name);
+        else
+            msg = QString("Timer \"%1\" has finished!").arg(name);
+
+        QMessageBox::information(this, "Timer Finished", msg);
+    });
+
+    connect(&manager, &TimerManager::recommendationAvailable, this, [this](const QString &nextName) {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("Recommendation");
+        msgBox.setText(QString("Timer finished! Recommended to start timer '%1'.").arg(nextName));
+        QPushButton *startBtn = msgBox.addButton("Start Recommended Timer", QMessageBox::AcceptRole);
+        msgBox.addButton(QMessageBox::Cancel);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == startBtn) {
+            auto timers = manager.getTimers();
+            for (int i = 0; i < timers.size(); ++i) {
+                if (timers[i].name == nextName) {
+                    manager.startTimer(i);
+                    QMessageBox::information(this, "Started", QString("Timer '%1' started.").arg(nextName));
+                    break;
+                }
+            }
+        }
     });
 
     manager.loadFromFile(timersFilePath());
@@ -71,9 +188,24 @@ TimerWindow::TimerWindow(QWidget *parent)
     });
 
     QSettings settings("SmartTimerApp", "SmartTimer");
+
+    playSound = settings.value("playSound", true).toBool();
+    runAction = settings.value("runAction", false).toBool();
+    actionPath = settings.value("actionPath", "").toString();
     continueAfterExit = settings.value("continueAfterExit", false).toBool();
 
     connect(ui->comboBox, &QComboBox::currentTextChanged, this, &TimerWindow::updateTable);
+
+    connect(ui->btnStartGroup, &QPushButton::clicked, this, [this]() {
+        const QString group = ui->comboGroups->currentText();
+        if (!group.isEmpty()) {
+            manager.startGroup(group);
+            QMessageBox::information(this, "Group started",
+                                     QString("Started all timers in group '%1'").arg(group));
+        }
+    });
+
+    connect(&manager, &TimerManager::timersUpdated, this, &TimerWindow::updateNextUpLabel);
 
 }
 
@@ -86,30 +218,40 @@ void TimerWindow::onAddTimer()
 {
     TimerEditDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        manager.addTimer(dialog.getName(), dialog.getTotalSeconds());
+        manager.addTimer(dialog.getName(), dialog.getTotalSeconds(), dialog.getType(), dialog.getGroup());
+        updateTable();
     }
 }
 
 void TimerWindow::onSettings()
 {
-    SettingsTimerDialog dialog(this);
+    SettingsTimerDialog dialog(&manager, this);
 
-    dialog.setSoundEnabled(playSound);
-    dialog.setActionEnabled(runAction);
-    dialog.setActionPath(actionPath);
-    dialog.setContinueAfterExit(continueAfterExit);  // 🔹 передаємо поточне значення
+    QSettings settings("SmartTimerApp", "SmartTimer");
+
+    dialog.setSoundEnabled(settings.value("playSound", true).toBool());
+    dialog.setActionEnabled(settings.value("runAction", false).toBool());
+    dialog.setActionPath(settings.value("actionPath", "").toString());
+    dialog.setContinueAfterExit(settings.value("continueAfterExit", false).toBool());
+    dialog.setMelodySoundPath(settings.value("melodySoundPath", "").toString());
+    dialog.setReminderSoundPath(settings.value("reminderSoundPath", "").toString());
+    dialog.setRecommendationsEnabled(settings.value("recommendationsEnabled", false).toBool());
 
     if (dialog.exec() == QDialog::Accepted) {
         playSound = dialog.isSoundEnabled();
         runAction = dialog.isActionEnabled();
         actionPath = dialog.getActionPath();
-        continueAfterExit = dialog.continueAfterExit(); // 🔹 отримуємо вибір користувача
+        continueAfterExit = dialog.continueAfterExit();
 
-        QMessageBox::information(this, "Settings Saved",
-                                 QString("Sound: %1\nAction: %2\nContinue timers: %3")
-                                     .arg(playSound ? "ON" : "OFF")
-                                     .arg(runAction ? "ON" : "OFF")
-                                     .arg(continueAfterExit ? "YES" : "NO"));
+        settings.setValue("playSound", playSound);
+        settings.setValue("runAction", runAction);
+        settings.setValue("actionPath", actionPath);
+        settings.setValue("melodySoundPath", dialog.melodySoundPath());
+        settings.setValue("reminderSoundPath", dialog.reminderSoundPath());
+        settings.setValue("continueAfterExit", continueAfterExit);
+        settings.setValue("recommendationsEnabled", dialog.isRecommendationsEnabled());
+
+        manager.saveToFile(timersFilePath());
     }
 }
 
@@ -121,6 +263,10 @@ void TimerWindow::onHistory()
         manager.addTimer(t.name, t.duration);
         saveHistoryJson();
         updateTable();
+    });
+
+    connect(&dialog, &HistoryTimerWindow::historyChanged, this, [this]() {
+        saveHistoryJson();
     });
 
     dialog.exec();
@@ -178,7 +324,6 @@ void TimerWindow::onDeleteTimer()
                              QString("Moved %1 timer(s) to History.").arg(rows.size()));
 }
 
-
 void TimerWindow::onEditTimer()
 {
     int row = ui->tableTimers->currentRow();
@@ -188,7 +333,8 @@ void TimerWindow::onEditTimer()
     }
 
     QList<TimerData> timers = manager.getTimers();
-    if (row >= timers.size()) return;
+    if (row >= timers.size())
+        return;
 
     const TimerData &t = timers[row];
     TimerEditDialog dialog(this);
@@ -198,16 +344,25 @@ void TimerWindow::onEditTimer()
     dialog.findChild<QSpinBox*>("spinMinutes")->setValue((t.duration % 3600) / 60);
     dialog.findChild<QSpinBox*>("spinSeconds")->setValue(t.duration % 60);
 
+    QComboBox *combo = dialog.findChild<QComboBox*>("comboType");
+    if (combo) {
+        int idx = combo->findText(t.type);
+        if (idx >= 0)
+            combo->setCurrentIndex(idx);
+    }
+
     if (dialog.exec() == QDialog::Accepted) {
         QString newName = dialog.getName();
         int newSeconds = dialog.getTotalSeconds();
+        QString newType = dialog.getType();
 
         if (newName.isEmpty() || newSeconds <= 0) {
             QMessageBox::warning(this, "Invalid input", "Please enter valid values.");
             return;
         }
 
-        manager.editTimer(row, newName, newSeconds);
+        manager.editTimer(row, newName, newSeconds, newType, "Default");
+        updateTable();
     }
 }
 
@@ -250,6 +405,7 @@ void TimerWindow::updateTable()
         ui->tableTimers->setItem(i, 0, new QTableWidgetItem(t.name));
         ui->tableTimers->setItem(i, 1, new QTableWidgetItem(remainingStr));
         ui->tableTimers->setItem(i, 2, new QTableWidgetItem(statusText));
+        ui->tableTimers->setItem(i, 3, new QTableWidgetItem(t.type));
 
         if (t.status == TimerStatus::Finished) {
             for (int col = 0; col < 3; ++col) {
@@ -258,8 +414,14 @@ void TimerWindow::updateTable()
             }
         }
     }
+    ui->comboGroups->clear();
+    QStringList groups;
+    for (const auto &t : manager.getTimers()) {
+        if (!groups.contains(t.groupName))
+            groups << t.groupName;
+    }
+    ui->comboGroups->addItems(groups);
 }
-
 
 QString TimerWindow::timersFilePath() const
 {
@@ -315,6 +477,9 @@ void TimerWindow::closeEvent(QCloseEvent *event)
 {
     QSettings settings("SmartTimerApp", "SmartTimer");
     settings.setValue("continueAfterExit", continueAfterExit);
+    settings.setValue("playSound", playSound);
+    settings.setValue("runAction", runAction);
+    settings.setValue("actionPath", actionPath);
 
     if (!continueAfterExit) {
         QList<TimerData> timers = manager.getTimers();
@@ -323,7 +488,65 @@ void TimerWindow::closeEvent(QCloseEvent *event)
         }
     }
 
+    if (trayIcon && trayIcon->isVisible()) {
+        hide();
+        event->ignore();
+    } else {
+        event->accept();
+    }
     manager.saveToFile(timersFilePath());
     saveHistoryJson();
     event->accept();
+}
+
+void TimerWindow::updateNextUpLabel()
+{
+    TimerData next = manager.getNextTimer();
+
+    if (!next.name.isEmpty()) {
+        int minutes = next.remaining / 60;
+        int seconds = next.remaining % 60;
+        ui->labelNextUp->setText(QString("Next up: %1 (in %2:%3)")
+                                     .arg(next.name)
+                                     .arg(minutes, 2, 10, QLatin1Char('0'))
+                                     .arg(seconds, 2, 10, QLatin1Char('0')));
+
+#ifdef Q_OS_WIN
+        if (!next.name.isEmpty() && next.duration > 0) {
+            int percent = int(100.0 * (1.0 - double(next.remaining) / next.duration));
+            setTaskbarProgress(window(), percent, 100);
+        } else {
+            ui->labelNextUp->setText("Next up: None");
+#ifdef Q_OS_WIN
+            setTaskbarProgress(window(), 0, 0);
+#endif
+        }
+#endif
+        }
+    }
+
+void TimerWindow::updateTrayTooltip()
+{
+    int running = 0;
+    int finished = 0;
+    auto timers = manager.getTimers();
+    for (const auto &t : timers) {
+        if (t.status == TimerStatus::Running) running++;
+        if (t.status == TimerStatus::Finished) finished++;
+    }
+
+    if (running == 0)
+        trayIcon->setToolTip("No active timers");
+    else if (running == 1)
+        trayIcon->setToolTip("1 timer running");
+    else
+        trayIcon->setToolTip(QString("%1 timers running").arg(running));
+}
+
+void TimerWindow::onTrayActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) {
+        this->showNormal();
+        this->activateWindow();
+    }
 }

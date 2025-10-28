@@ -55,11 +55,11 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
-        <width>150</width>
+        <width>200</width>
         <height>100</height>
        </size>
       </property>

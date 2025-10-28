@@ -2,6 +2,7 @@
 #define SETTINGSTIMERDIALOG_H
 
 #include <QDialog>
+#include "timermanager.h"
 
 namespace Ui {
 class SettingsTimerDialog;
@@ -12,7 +13,7 @@ class SettingsTimerDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsTimerDialog(QWidget *parent = nullptr);
+    explicit SettingsTimerDialog(TimerManager *manager, QWidget *parent = nullptr);
     ~SettingsTimerDialog();
 
     bool isSoundEnabled() const;
@@ -26,11 +27,28 @@ public:
     bool continueAfterExit() const;
     void setContinueAfterExit(bool enabled);
 
+    QString melodySoundPath() const;
+    QString reminderSoundPath() const;
+    void setMelodySoundPath(const QString &path);
+    void setReminderSoundPath(const QString &path);
+
+    bool isRecommendationsEnabled() const;
+    void setRecommendationsEnabled(bool enabled);
+
 private slots:
     void onBrowseClicked();
 
+    void onAddRecommendationClicked();
+    void onDeleteRecommendationClicked();
+
 private:
     Ui::SettingsTimerDialog *ui;
+    TimerManager *m_manager;
+    QString m_melodySoundPath;
+    QString m_reminderSoundPath;
+
+    void animateWidget(QWidget *widget, bool expand);
+    void refreshRecommendationTable();
 };
 
 #endif // SETTINGSTIMERDIALOG_H

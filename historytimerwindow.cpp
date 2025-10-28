@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QKeyEvent>
+#include <QPropertyAnimation>
 
 HistoryTimerWindow::HistoryTimerWindow(QList<TimerData> *deletedTimers, QWidget *parent)
     : QDialog(parent)
@@ -19,7 +20,30 @@ HistoryTimerWindow::HistoryTimerWindow(QList<TimerData> *deletedTimers, QWidget 
     ui->tableHistory->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     connect(ui->btnClose, &QPushButton::clicked, this, &HistoryTimerWindow::onCloseClicked);
-    ui->btnClose->setShortcut(Qt::Key_Escape); // ← Esc закриває вікно
+    ui->btnClose->setShortcut(Qt::Key_Escape);
+
+    ui->widgetActions->setVisible(false);
+    ui->widgetActions->setMaximumHeight(0);
+
+    connect(ui->btnRestoreSelected, &QPushButton::clicked, this, &HistoryTimerWindow::onRestoreSelected);
+    connect(ui->btnDeleteSelected, &QPushButton::clicked, this, &HistoryTimerWindow::onDeleteSelected);
+
+    connect(ui->tableHistory->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this]() {
+        int selectedCount = ui->tableHistory->selectionModel()->selectedRows().count();
+        bool shouldShow = selectedCount >= 2;
+
+    if (ui->widgetActions->isVisible() != shouldShow) {
+        QPropertyAnimation *anim = new QPropertyAnimation(ui->widgetActions, "maximumHeight");
+        anim->setDuration(200);
+        anim->setStartValue(shouldShow ? 0 : ui->widgetActions->height());
+        anim->setEndValue(shouldShow ? 40 : 0);
+        anim->start(QAbstractAnimation::DeleteWhenStopped);
+
+        ui->widgetActions->setVisible(shouldShow);
+     }
+    });
+
+    ui->tableHistory->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     updateTable();
 }
@@ -27,6 +51,53 @@ HistoryTimerWindow::HistoryTimerWindow(QList<TimerData> *deletedTimers, QWidget 
 HistoryTimerWindow::~HistoryTimerWindow()
 {
     delete ui;
+}
+
+void HistoryTimerWindow::onRestoreSelected()
+{
+    QModelIndexList selectedRows = ui->tableHistory->selectionModel()->selectedRows();
+    if (selectedRows.size() < 2) return;
+
+    QList<int> indexes;
+    for (const QModelIndex &idx : selectedRows)
+        indexes.append(idx.row());
+    std::sort(indexes.begin(), indexes.end(), std::greater<int>());
+
+    for (int i : indexes) {
+        if (i >= 0 && i < deletedTimers->size()) {
+            TimerData timer = deletedTimers->takeAt(i);
+            emit restoreTimer(timer);
+        }
+    }
+
+    updateTable();
+    ui->widgetActions->setVisible(false);
+}
+
+void HistoryTimerWindow::onDeleteSelected()
+{
+    QModelIndexList selectedRows = ui->tableHistory->selectionModel()->selectedRows();
+    if (selectedRows.size() < 2) return;
+
+    if (QMessageBox::question(this, "Delete permanently",
+                              "Delete selected timers permanently?",
+                              QMessageBox::Yes | QMessageBox::No)
+        != QMessageBox::Yes)
+        return;
+
+    QList<int> indexes;
+    for (const QModelIndex &idx : selectedRows)
+        indexes.append(idx.row());
+    std::sort(indexes.begin(), indexes.end(), std::greater<int>());
+
+    for (int i : indexes) {
+        if (i >= 0 && i < deletedTimers->size())
+            deletedTimers->removeAt(i);
+    }
+
+    updateTable();
+    ui->widgetActions->setVisible(false);
+    emit historyChanged();
 }
 
 void HistoryTimerWindow::updateTable()
@@ -37,10 +108,8 @@ void HistoryTimerWindow::updateTable()
     for (int i = 0; i < deletedTimers->size(); ++i) {
         const TimerData &t = deletedTimers->at(i);
 
-        // Назва
         ui->tableHistory->setItem(i, 0, new QTableWidgetItem(t.name));
 
-        // Тривалість
         int hours = t.duration / 3600;
         int minutes = (t.duration % 3600) / 60;
         int seconds = t.duration % 60;
@@ -50,28 +119,24 @@ void HistoryTimerWindow::updateTable()
                                .arg(seconds, 2, 10, QChar('0'));
         ui->tableHistory->setItem(i, 1, new QTableWidgetItem(duration));
 
-        // кнопка Restore
         QPushButton *btnRestore = new QPushButton("Restore", ui->tableHistory);
         btnRestore->setProperty("index", i);
         ui->tableHistory->setCellWidget(i, 2, btnRestore);
 
-        // кнопка Delete
         QPushButton *btnDelete = new QPushButton("Delete", ui->tableHistory);
         btnDelete->setProperty("index", i);
         ui->tableHistory->setCellWidget(i, 3, btnDelete);
 
-        // Restore натискання
         connect(btnRestore, &QPushButton::clicked, this, [this, btnRestore]() {
             bool ok;
             int index = btnRestore->property("index").toInt(&ok);
             if (!ok || index < 0 || index >= deletedTimers->size()) return;
 
             TimerData timer = deletedTimers->takeAt(index);
-            emit restoreTimer(timer);  // сигнал у TimerWindow
-            updateTable();             // оновити таблицю
+            emit restoreTimer(timer);
+            updateTable();
         });
 
-        // Delete натискання
         connect(btnDelete, &QPushButton::clicked, this, [this, btnDelete]() {
             bool ok;
             int index = btnDelete->property("index").toInt(&ok);
@@ -84,6 +149,7 @@ void HistoryTimerWindow::updateTable()
             {
                 deletedTimers->removeAt(index);
                 updateTable();
+                emit historyChanged();
             }
         });
     }
@@ -91,5 +157,5 @@ void HistoryTimerWindow::updateTable()
 
 void HistoryTimerWindow::onCloseClicked()
 {
-    accept(); // закриває вікно
+    accept();
 }

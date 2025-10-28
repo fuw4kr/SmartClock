@@ -1,9 +1,11 @@
 #ifndef TIMERWINDOW_H
 #define TIMERWINDOW_H
 
-#include <QWidget>
 #include "timermanager.h"
 #include "settingstimerdialog.h"
+#include <QWidget>
+#include <QSystemTrayIcon>
+#include <QMenu>
 
 namespace Ui {
 class TimerWindow;
@@ -28,6 +30,11 @@ private slots:
     void onDeleteTimer();
     void onEditTimer();
     void updateTable();
+    void updateNextUpLabel();
+
+    void updateTrayTooltip();
+    void onTrayActivated(QSystemTrayIcon::ActivationReason reason);
+
 
 private:
     Ui::TimerWindow *ui;
@@ -43,7 +50,9 @@ private:
     QList<TimerData> deletedTimers;
     bool continueAfterExit = false;
 
-
+    QSystemTrayIcon *trayIcon;
+    QMenu *trayMenu;
+    QTimer *trayUpdateTimer;
 
 };
 
