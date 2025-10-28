@@ -22,7 +22,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tabWidget->addTab(stopwatchWindow, QIcon(":/resources/icons/stopwatch.png"),"Stopwatch");
     ui->tabWidget->addTab(timerWindow,QIcon(":/resources/icons/timer.png"), "Timer");
 
-
     ui->tabWidget->tabBar()->setIconSize(QSize(20, 20));
 
     ui->tabWidget->setCurrentIndex(0);
@@ -32,4 +31,6 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+
 
