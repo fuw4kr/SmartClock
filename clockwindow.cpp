@@ -27,7 +27,6 @@ ClockWindow::ClockWindow(QWidget *parent)
     connect(&timer, &QTimer::timeout, this, &ClockWindow::updateTime);
     timer.start(1000);
 
-    // Завантаження JSON
     loadFromJson();
 
     ui->checkFormat12->setChecked(format12h);
@@ -88,7 +87,6 @@ void ClockWindow::onRemoveClock()
     saveToJson();
 }
 
-
 void ClockWindow::onToggleFormat(bool checked)
 {
     format12h = checked;
@@ -112,8 +110,6 @@ void ClockWindow::updateListTexts()
         if (auto item = ui->listClocks->item(i))
             item->setText(timeTextFor(clocks[i]));
 }
-
-// ---------------- JSON ----------------
 
 void ClockWindow::saveToJson() const
 {

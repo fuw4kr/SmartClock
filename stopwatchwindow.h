@@ -2,6 +2,13 @@
 #define STOPWATCHWINDOW_H
 
 #include <QDialog>
+#include <QTimer>
+#include <QTime>
+#include <QList>
+#include <QStackedWidget>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include "analogstopwatchdial.h"
 
 namespace Ui {
 class StopwatchWindow;
@@ -15,8 +22,29 @@ public:
     explicit StopwatchWindow(QWidget *parent = nullptr);
     ~StopwatchWindow();
 
+private slots:
+    void onStartStopClicked();
+    void onLapClicked();
+    void updateDisplay();
+    void resetStopwatch();
+
 private:
     Ui::StopwatchWindow *ui;
+    QTimer *timer;
+    QTime elapsed;
+    bool running = false;
+    QList<QTime> lapTimes;
+    QStringList lapTexts;
+    QList<int> lapDurations;
+
+    AnalogStopwatchDial *analogDial;
+    bool analogMode = false;
+
+    QString filePath() const;
+    void saveToFile() const;
+    void loadFromFile();
+    void updateLapColors();
+    QStackedWidget *stackedView;
 };
 
 #endif // STOPWATCHWINDOW_H

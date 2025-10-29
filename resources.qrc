@@ -5,8 +5,14 @@
         <file>resources/icons/timer.png</file>
         <file>resources/icons/stopwatch.png</file>
         <file>resources/icons/timertray.png</file>
+        <file>resources/icons/switch_off.png</file>
+        <file>resources/icons/switch_on.png</file>
+        <file>resources/icons/toggle_off.png</file>
+        <file>resources/icons/toggle_on.png</file>
+        <file>resources/icons/datatransfer.png</file>
     </qresource>
     <qresource prefix="/s">
         <file>resources/sounds/soundtimer.wav</file>
+        <file>resources/sounds/soundalarm.wav</file>
     </qresource>
 </RCC>

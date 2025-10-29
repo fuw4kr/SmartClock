@@ -2,6 +2,7 @@
 #define ALARMWINDOW_H
 
 #include <QDialog>
+#include "alarmmanager.h"
 
 namespace Ui {
 class AlarmWindow;
@@ -15,8 +16,16 @@ public:
     explicit AlarmWindow(QWidget *parent = nullptr);
     ~AlarmWindow();
 
+private slots:
+    void onAddAlarm();
+    void onRemoveAlarm();
+    void updateList();
+
 private:
     Ui::AlarmWindow *ui;
+    AlarmManager *manager;
+
+    QString alarmsFilePath() const;
 };
 
 #endif // ALARMWINDOW_H

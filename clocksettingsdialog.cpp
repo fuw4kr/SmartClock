@@ -14,11 +14,10 @@ ClockSettingsDialog::ClockSettingsDialog(QWidget *parent)
     for (const QByteArray &z : zones)
         ui->comboZone->addItem(QString::fromUtf8(z), z);
 
-    // натискання OK/Cancel
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, [this]() {
         if (ui->comboZone->currentIndex() < 0) {
             QMessageBox::warning(this, "Select Zone", "Please select a time zone before proceeding.");
-            return; // не закривати діалог, якщо нічого не вибрано
+            return;
         }
         accept();
     });
@@ -34,6 +33,6 @@ QString ClockSettingsDialog::getSelectedZone() const
 {
     int idx = ui->comboZone->currentIndex();
     if (idx < 0)
-        return QString(); // повертає пустий рядок
+        return QString();
     return ui->comboZone->currentData().toString();
 }

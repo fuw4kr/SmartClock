@@ -13,6 +13,35 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QListWidget" name="listAlarms">
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+     </property>
+     <property name="spacing">
+      <number>4</number>
+     </property>
+     <property name="uniformItemSizes">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btnAdd">
+     <property name="text">
+      <string>Add</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btnRemove">
+     <property name="text">
+      <string>Delete</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>
