@@ -22,6 +22,7 @@ SettingsTimerDialog::SettingsTimerDialog(TimerManager *manager, QWidget *parent)
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &SettingsTimerDialog::accept);
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &SettingsTimerDialog::reject);
 
+
     ui->widget_3->setMaximumHeight(0);
     ui->widget_3->setVisible(false);
     connect(ui->checkSound, &QCheckBox::toggled, this, [this](bool checked) {
@@ -45,10 +46,22 @@ SettingsTimerDialog::SettingsTimerDialog(TimerManager *manager, QWidget *parent)
     }
 
     ui->tableRecommendations->setColumnCount(2);
+    ui->tableRecommendations->setShowGrid(false);
     ui->tableRecommendations->setHorizontalHeaderLabels({"After Timer", "Recommend"});
     ui->tableRecommendations->horizontalHeader()->setStretchLastSection(true);
     ui->tableRecommendations->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableRecommendations->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->tableRecommendations->setMouseTracking(true);
+    connect(ui->tableRecommendations, &QTableWidget::entered,
+            this, [this](const QModelIndex &index) {
+                ui->tableRecommendations->selectRow(index.row());
+            });
+
+    connect(ui->tableRecommendations, &QTableWidget::viewportEntered,
+            this, [this]() {
+                ui->tableRecommendations->clearSelection();
+            });
 
     refreshRecommendationTable();
 }
@@ -60,22 +73,35 @@ SettingsTimerDialog::~SettingsTimerDialog()
 
 void SettingsTimerDialog::animateWidget(QWidget *widget, bool expand)
 {
-    widget->setVisible(true);
-    int startHeight = expand ? 0 : widget->maximumHeight();
+    if (!widget)
+        return;
+
+    int startHeight = widget->maximumHeight();
     int endHeight = expand ? widget->sizeHint().height() : 0;
 
+    if (expand)
+        widget->setVisible(true);
+
     auto *animation = new QPropertyAnimation(widget, "maximumHeight", this);
-    animation->setDuration(300);
+    animation->setDuration(250);
     animation->setStartValue(startHeight);
     animation->setEndValue(endHeight);
     animation->setEasingCurve(QEasingCurve::InOutCubic);
 
     connect(animation, &QPropertyAnimation::finished, this, [=]() {
-        widget->setVisible(expand);
+        if (!expand)
+            widget->setVisible(false);
+        else {
+            widget->setMaximumHeight(QWIDGETSIZE_MAX);
+            widget->updateGeometry();
+            if (auto *lay = this->layout())
+                lay->invalidate();
+        }
     });
 
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
+
 
 void SettingsTimerDialog::onAddRecommendationClicked()
 {
@@ -132,6 +158,10 @@ void SettingsTimerDialog::refreshRecommendationTable()
     }
 
     ui->tableRecommendations->resizeColumnsToContents();
+    ui->tableRecommendations->resizeRowsToContents();
+    ui->tableRecommendations->resizeColumnsToContents();
+    ui->tableRecommendations->setVisible(true);
+    ui->tableRecommendations->updateGeometry();
 }
 
 void SettingsTimerDialog::onBrowseClicked()
@@ -147,15 +177,31 @@ QString SettingsTimerDialog::getActionPath() const { return ui->lineEditPath->te
 
 void SettingsTimerDialog::setSoundEnabled(bool enabled)
 {
+    ui->checkSound->blockSignals(true);
     ui->checkSound->setChecked(enabled);
-    animateWidget(ui->widget_3, enabled);
+    ui->widget_3->setVisible(enabled);
+    ui->widget_3->setMaximumHeight(enabled ? ui->widget_3->sizeHint().height() : 0);
+    ui->checkSound->blockSignals(false);
 }
 
 void SettingsTimerDialog::setActionEnabled(bool enabled)
 {
+    ui->checkAction->blockSignals(true);
     ui->checkAction->setChecked(enabled);
-    animateWidget(ui->widgetFileSelect, enabled);
+    ui->widgetFileSelect->setVisible(enabled);
+    ui->widgetFileSelect->setMaximumHeight(enabled ? ui->widgetFileSelect->sizeHint().height() : 0);
+    ui->checkAction->blockSignals(false);
 }
+
+void SettingsTimerDialog::setRecommendationsEnabled(bool enabled)
+{
+    ui->checkBox->blockSignals(true);
+    ui->checkBox->setChecked(enabled);
+    ui->widgetRecommendations->setVisible(enabled);
+    ui->widgetRecommendations->setMaximumHeight(enabled ? ui->widgetRecommendations->sizeHint().height() : 0);
+    ui->checkBox->blockSignals(false);
+}
+
 
 void SettingsTimerDialog::setActionPath(const QString &path)
 {
@@ -191,8 +237,3 @@ bool SettingsTimerDialog::isRecommendationsEnabled() const
     return ui->checkBox->isChecked();
 }
 
-void SettingsTimerDialog::setRecommendationsEnabled(bool enabled)
-{
-    ui->checkBox->setChecked(enabled);
-    animateWidget(ui->widgetRecommendations, enabled);
-}

@@ -21,6 +21,8 @@ class StopwatchWindow : public QDialog
 public:
     explicit StopwatchWindow(QWidget *parent = nullptr);
     ~StopwatchWindow();
+    QString getCurrentLapTimeString() const;
+    QString getTotalTimeString() const;
 
 private slots:
     void onStartStopClicked();

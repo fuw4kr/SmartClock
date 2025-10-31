@@ -17,7 +17,8 @@ AlarmManager::AlarmManager(QObject *parent)
 void AlarmManager::addAlarm(const AlarmData &data)
 {
     AlarmData a = data;
-    a.nextTrigger = computeInitialTrigger(a.time);
+    if (!a.nextTrigger.isValid())
+        a.nextTrigger = computeInitialTrigger(a.time);
     alarms.append(a);
     emit alarmsUpdated();
 }
@@ -32,10 +33,12 @@ void AlarmManager::removeAlarm(int index)
 
 void AlarmManager::toggleAlarm(int index)
 {
-    if (index >= 0 && index < alarms.size()) {
-        alarms[index].enabled = !alarms[index].enabled;
-        emit alarmsUpdated();
+    if (index < 0 || index >= alarms.size()) return;
+    alarms[index].enabled = !alarms[index].enabled;
+    if (alarms[index].enabled) {
+        alarms[index].nextTrigger = computeInitialTrigger(alarms[index].time);
     }
+    emit alarmsUpdated();
 }
 
 QList<AlarmData> AlarmManager::getAlarms() const
@@ -85,10 +88,10 @@ void AlarmManager::checkAlarms()
         if (!a.enabled)
             continue;
 
-        if (a.time.hour() == now.time().hour() &&
-            a.time.minute() == now.time().minute() &&
-            now.time().second() == 0)
-        {
+        if (!a.nextTrigger.isValid())
+            a.nextTrigger = computeInitialTrigger(a.time);
+
+        if (a.nextTrigger <= now) {
             QSoundEffect *effect = new QSoundEffect(this);
             const QString src = a.soundPath.isEmpty()
                                     ? "qrc:/s/resources/sounds/soundalarm.wav"
@@ -112,22 +115,19 @@ void AlarmManager::checkAlarms()
 
             int res = msg.exec();
 
-            if (effect->isPlaying()) {
+            if (effect->isPlaying())
                 effect->stop();
-            }
             effect->deleteLater();
 
             if (a.snooze && res == QMessageBox::Yes) {
-                a.time = QTime::currentTime().addSecs(5 * 60);
+                a.nextTrigger = now.addSecs(5 * 60);
                 a.enabled = true;
             }
             else {
                 if (a.repeatMode == "Never" || a.repeatMode.toLower() == "once") {
                     a.enabled = false;
                 } else {
-                    QTime t = a.time.addSecs(24 * 60 * 60);
-                    if (t.isValid())
-                        a.time = t;
+                    a.nextTrigger = computeNextTrigger(a, now);
                     a.enabled = true;
                 }
             }

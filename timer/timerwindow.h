@@ -4,8 +4,6 @@
 #include "timermanager.h"
 #include "settingstimerdialog.h"
 #include <QWidget>
-#include <QSystemTrayIcon>
-#include <QMenu>
 
 namespace Ui {
 class TimerWindow;
@@ -18,6 +16,7 @@ class TimerWindow : public QWidget
 public:
     explicit TimerWindow(QWidget *parent = nullptr);
     ~TimerWindow();
+    TimerManager* getManager() { return &manager; }
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -32,10 +31,6 @@ private slots:
     void updateTable();
     void updateNextUpLabel();
 
-    void updateTrayTooltip();
-    void onTrayActivated(QSystemTrayIcon::ActivationReason reason);
-
-
 private:
     Ui::TimerWindow *ui;
     TimerManager manager;
@@ -49,11 +44,6 @@ private:
     QString timersFilePath() const;
     QList<TimerData> deletedTimers;
     bool continueAfterExit = false;
-
-    QSystemTrayIcon *trayIcon;
-    QMenu *trayMenu;
-    QTimer *trayUpdateTimer;
-
 };
 
 #endif // TIMERWINDOW_H

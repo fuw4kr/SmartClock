@@ -15,6 +15,7 @@ class AlarmWindow : public QDialog
 public:
     explicit AlarmWindow(QWidget *parent = nullptr);
     ~AlarmWindow();
+    QString getNextAlarmString() const;
 
 private slots:
     void onAddAlarm();

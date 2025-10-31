@@ -3,6 +3,8 @@
 #include "timereditdialog.h"
 #include "settingstimerdialog.h"
 #include "historytimerwindow.h"
+#include "../mainwindow.h"
+
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QSpinBox>
@@ -59,42 +61,27 @@ TimerWindow::TimerWindow(QWidget *parent)
 
     setWindowTitle("Timer");
 
-
-    trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setIcon(QIcon(":/resources/icons/timertray.png"));
-    trayIcon->setToolTip("Smart Timer — no active timers");
-
-    trayMenu = new QMenu(this);
-
-    trayMenu->addAction("Open", this, [this]() {
-        QWidget *mainWin = this->window();
-        if (mainWin) {
-            mainWin->show();
-            mainWin->setWindowState((mainWin->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-            mainWin->raise();
-            mainWin->activateWindow();
-        }
-    });
-
-    trayMenu->addAction("Exit", qApp, &QCoreApplication::quit);
-    trayIcon->setContextMenu(trayMenu);
-
-    connect(trayIcon, &QSystemTrayIcon::activated, this, &TimerWindow::onTrayActivated);
-    trayIcon->show();
-
-    connect(&manager, &TimerManager::timersUpdated, this, &TimerWindow::updateTrayTooltip);
-
-    trayUpdateTimer = new QTimer(this);
-    connect(trayUpdateTimer, &QTimer::timeout, this, &TimerWindow::updateTrayTooltip);
-    trayUpdateTimer->start(1000);
-
     ui->tableTimers->setColumnCount(4);
     ui->tableTimers->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     ui->tableTimers->setHorizontalHeaderLabels({"Name", "Remaining", "Status", "Type"});
+    ui->tableTimers->setShowGrid(false);
+
     ui->tableTimers->horizontalHeader()->setStretchLastSection(true);
     ui->tableTimers->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableTimers->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+    ui->tableTimers->setMouseTracking(true);
+    connect(ui->tableTimers, &QTableWidget::entered,
+            this, [this](const QModelIndex &index) {
+                ui->tableTimers->selectRow(index.row());
+            });
+
+    connect(ui->tableTimers, &QTableWidget::viewportEntered,
+            this, [this]() {
+                ui->tableTimers->clearSelection();
+            });
+
 
     ui->comboBox->clear();
     ui->comboBox->addItems({"All timers", "Running", "Paused", "Finished"});
@@ -487,13 +474,6 @@ void TimerWindow::closeEvent(QCloseEvent *event)
             manager.pauseTimer(i);
         }
     }
-
-    if (trayIcon && trayIcon->isVisible()) {
-        hide();
-        event->ignore();
-    } else {
-        event->accept();
-    }
     manager.saveToFile(timersFilePath());
     saveHistoryJson();
     event->accept();
@@ -525,28 +505,4 @@ void TimerWindow::updateNextUpLabel()
         }
     }
 
-void TimerWindow::updateTrayTooltip()
-{
-    int running = 0;
-    int finished = 0;
-    auto timers = manager.getTimers();
-    for (const auto &t : timers) {
-        if (t.status == TimerStatus::Running) running++;
-        if (t.status == TimerStatus::Finished) finished++;
-    }
 
-    if (running == 0)
-        trayIcon->setToolTip("No active timers");
-    else if (running == 1)
-        trayIcon->setToolTip("1 timer running");
-    else
-        trayIcon->setToolTip(QString("%1 timers running").arg(running));
-}
-
-void TimerWindow::onTrayActivated(QSystemTrayIcon::ActivationReason reason)
-{
-    if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) {
-        this->showNormal();
-        this->activateWindow();
-    }
-}

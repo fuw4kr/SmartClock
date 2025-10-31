@@ -132,3 +132,41 @@ QString AlarmWindow::alarmsFilePath() const
     QDir().mkpath(base);
     return base + "/alarms.json";
 }
+
+
+QString AlarmWindow::getNextAlarmString() const
+{
+const QList<AlarmData> list = manager->getAlarms();
+
+    if (list.isEmpty())
+        return "No alarms set";
+
+    QDateTime best;
+    bool found = false;
+
+    for (const auto &a : list) {
+        if (!a.enabled) continue;
+
+        if (!a.nextTrigger.isValid()) continue;
+
+        if (!found || a.nextTrigger < best) {
+            best = a.nextTrigger;
+            found = true;
+        }
+    }
+
+    if (!found)
+        return "No upcoming alarms";
+
+    const QDate today = QDate::currentDate();
+    QString dayStr;
+    if (best.date() == today) {
+        dayStr = "Today";
+    } else if (best.date() == today.addDays(1)) {
+        dayStr = "Tomorrow";
+    } else {
+        dayStr = best.date().toString("ddd");
+    }
+
+    return QString("%1 %2").arg(dayStr, best.time().toString("hh:mm"));
+}

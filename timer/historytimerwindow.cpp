@@ -14,10 +14,22 @@ HistoryTimerWindow::HistoryTimerWindow(QList<TimerData> *deletedTimers, QWidget 
     setWindowTitle("Timer History");
 
     ui->tableHistory->setColumnCount(4);
+    ui->tableHistory->setShowGrid(false);
     ui->tableHistory->setHorizontalHeaderLabels({"Name", "Duration", "Restore", "Delete"});
     ui->tableHistory->horizontalHeader()->setStretchLastSection(true);
     ui->tableHistory->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableHistory->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    ui->tableHistory->setMouseTracking(true);
+    connect(ui->tableHistory, &QTableWidget::entered,
+            this, [this](const QModelIndex &index) {
+                ui->tableHistory->selectRow(index.row());
+            });
+
+    connect(ui->tableHistory, &QTableWidget::viewportEntered,
+            this, [this]() {
+                ui->tableHistory->clearSelection();
+            });
 
     connect(ui->btnClose, &QPushButton::clicked, this, &HistoryTimerWindow::onCloseClicked);
     ui->btnClose->setShortcut(Qt::Key_Escape);

@@ -21,10 +21,14 @@ public:
 
 signals:
     void toggled(bool enabled);
+protected:
+    bool event(QEvent *e) override;
+    bool eventFilter(QObject *obj, QEvent *e) override;
 
 private:
     Ui::AlarmItemWidget *ui;
     AlarmData alarm;
 };
+
 
 #endif // ALARMITEMWIDGET_H

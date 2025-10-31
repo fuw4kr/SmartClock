@@ -17,6 +17,69 @@
 #include <QPropertyAnimation>
 #include <QStackedWidget>
 
+
+#include <QStyledItemDelegate>
+#include <QPainter>
+
+namespace {
+enum { RoleLapFlag = Qt::UserRole + 100 }; // 0=none, 1=min, 2=max
+}
+
+class LapHighlightDelegate : public QStyledItemDelegate {
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+    void paint(QPainter *p, const QStyleOptionViewItem &option,
+               const QModelIndex &index) const override
+    {
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+
+        // Визначаємо тему (світла/темна)
+        const QWidget *w = opt.widget;
+        const bool isLight =
+            (w ? w->palette().color(QPalette::Window).lightness() > 180 : true);
+
+        // Кольори підсвітки
+        const QColor good = isLight ? QColor(182,235,195,255) : QColor(70,130,90,180);
+        const QColor bad  = isLight ? QColor(247,196,192,255) : QColor(130,60,60,180);
+
+        // Який тип кола?
+        const int flag = index.data(RoleLapFlag).toInt();
+
+        // Малюємо фон самі (перед стандартним рендером)
+        p->save();
+        p->setRenderHint(QPainter::Antialiasing, true);
+
+        QRect r = opt.rect.adjusted(2, 2, -2, -2);
+        if (flag == 1) {
+            p->setBrush(good);
+            p->setPen(Qt::NoPen);
+            p->drawRoundedRect(r, 5, 5);
+        } else if (flag == 2) {
+            p->setBrush(bad);
+            p->setPen(Qt::NoPen);
+            p->drawRoundedRect(r, 5, 5);
+        }
+
+        // Якщо айтем виділений користувачем — додаємо напівпрозорий оверлей,
+        // але не перебиваємо наш зелений/червоний фон.
+        if (opt.state.testFlag(QStyle::State_Selected)) {
+            QColor sel = isLight ? QColor(213, 41, 65, 120) : QColor(213,41,65,160);
+            p->setBrush(sel);
+            p->setPen(Qt::NoPen);
+            p->drawRoundedRect(r, 5, 5);
+        }
+
+        p->restore();
+
+        // Тепер малюємо текст/іконки стандартно (без «жорсткого» фону)
+        QStyleOptionViewItem clean = opt;
+        clean.backgroundBrush = Qt::NoBrush;
+        QStyledItemDelegate::paint(p, clean, index);
+    }
+};
+
 StopwatchWindow::StopwatchWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::StopwatchWindow)
@@ -101,6 +164,9 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
 
     loadFromFile();
     connect(qApp, &QCoreApplication::aboutToQuit, this, &StopwatchWindow::saveToFile);
+
+    ui->listLaps->setItemDelegate(new LapHighlightDelegate(ui->listLaps));
+
 }
 
 StopwatchWindow::~StopwatchWindow()
@@ -137,15 +203,18 @@ void StopwatchWindow::updateDisplay()
 void StopwatchWindow::onLapClicked()
 {
     if (running) {
-        QTime nowLap = elapsed;
-        int nowMs = nowLap.msecsSinceStartOfDay();
-        int lastMs = lapTimes.isEmpty() ? 0 : lapTimes.last().msecsSinceStartOfDay();
-        int segMs = nowMs - lastMs;
+        const QTime nowLap = elapsed;
 
-        QString lapTimeStr = nowLap.toString("mm:ss.zzz").left(8);
-        QString deltaStr = QTime(0, 0).addMSecs(segMs).toString("mm:ss.zzz").left(8);
-        int lapNumber = lapTimes.size() + 1;
-        QString text = QString("Lap %1: %2 (+%3)").arg(lapNumber).arg(lapTimeStr).arg(deltaStr);
+        int segMs = 0;
+        if (!lapTimes.isEmpty())
+            segMs = lapTimes.last().msecsTo(nowLap);
+        else
+            segMs = elapsed.msecsSinceStartOfDay(); // перше коло = від старту
+
+        const QString lapTimeStr = nowLap.toString("mm:ss.zzz").left(8);
+        const QString deltaStr   = QTime(0, 0).addMSecs(segMs).toString("mm:ss.zzz").left(8);
+        const int lapNumber = lapTimes.size() + 1;
+        const QString text = QString("Lap %1: %2 (+%3)").arg(lapNumber).arg(lapTimeStr).arg(deltaStr);
 
         lapTimes.append(nowLap);
         lapDurations.append(segMs);
@@ -175,19 +244,27 @@ void StopwatchWindow::updateLapColors()
         if (lapDurations[i] > maxVal) { maxVal = lapDurations[i]; maxIndex = i; }
     }
 
-    for (int i = 0; i < ui->listLaps->count(); ++i)
-        ui->listLaps->item(i)->setBackground(Qt::NoBrush);
+    // Скидаємо маркери
+    for (int i = 0; i < ui->listLaps->count(); ++i) {
+        if (auto *it = ui->listLaps->item(i)) {
+            it->setData(RoleLapFlag, 0);
+        }
+    }
 
-    int count = ui->listLaps->count();
-    int invMin = count - 1 - minIndex;
-    int invMax = count - 1 - maxIndex;
+    const int count = ui->listLaps->count();
+    const int invMin = count - 1 - minIndex;
+    const int invMax = count - 1 - maxIndex;
 
     if (invMin >= 0 && invMin < count)
-        ui->listLaps->item(invMin)->setBackground(QBrush(QColor(170, 255, 170)));
-
+        ui->listLaps->item(invMin)->setData(RoleLapFlag, 1); // best (зелений)
     if (invMax >= 0 && invMax < count)
-        ui->listLaps->item(invMax)->setBackground(QBrush(QColor(255, 170, 170)));
+        ui->listLaps->item(invMax)->setData(RoleLapFlag, 2); // worst (червоний)
+
+    // Перемалювати список
+    ui->listLaps->viewport()->update();
 }
+
+
 
 void StopwatchWindow::resetStopwatch()
 {
@@ -221,6 +298,12 @@ void StopwatchWindow::saveToFile() const
     QJsonObject obj;
     obj["elapsed_ms"] = elapsed.msecsSinceStartOfDay();
     obj["running"] = running;
+
+    if (!running && elapsed == QTime(0, 0)) {
+        QFile f(filePath());
+        f.remove();
+        return;
+    }
 
     QJsonArray lapsArr;
     for (const QString &s : lapTexts)
@@ -272,6 +355,13 @@ void StopwatchWindow::loadFromFile()
         if (i < durArr.size()) lapDurations.append(durArr[i].toInt());
     }
 
+    lapTimes.clear();
+    int accMs = 0;
+    for (int d : lapDurations) {
+        accMs += d;
+        lapTimes.append(QTime(0, 0).addMSecs(accMs));
+    }
+
     if (!lapTexts.isEmpty())
         ui->listLaps->setVisible(true);
 
@@ -283,4 +373,18 @@ void StopwatchWindow::loadFromFile()
         timer->start(10);
 
     updateLapColors();
+}
+
+QString StopwatchWindow::getCurrentLapTimeString() const
+{
+    if (!lapDurations.isEmpty()) {
+        const int segMs = lapDurations.last();
+        return QTime(0,0).addMSecs(segMs).toString("mm:ss.zzz").left(8);
+    }
+    return "—";
+}
+
+QString StopwatchWindow::getTotalTimeString() const
+{
+    return ui && ui->labelTime ? ui->labelTime->text() : "—";
 }

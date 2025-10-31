@@ -1,0 +1,1015 @@
+/* ==================== MAIN WINDOW ==================== */
+MainWindow {
+    background-color: #FFF8E8;
+    border-radius: 8px;
+    font-family: "Segoe UI", "Open Sans", "Roboto", "Noto Sans", sans-serif;
+    color: #41521F;
+}
+
+/* ==================== TITLE BAR ==================== */
+MainWindow QWidget#titleBar {
+    background-color: #FFF8E8;
+    border-bottom: 1px solid #FCD581;
+}
+
+MainWindow QLabel#titleLabel {
+    font-family: "Poppins SemiBold", "Segoe UI Semibold", "Noto Sans";
+    font-size: 16px;
+    font-weight: 600;
+    color: #41521F;
+    letter-spacing: 0.3px;
+    padding-left: 8px;
+}
+
+/* ==================== ICON ==================== */
+MainWindow QLabel#IconClock {
+    border: none;
+    margin-left: 8px;
+    margin-right: 4px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    qproperty-scaledContents: true;
+    border-radius: 6px;
+    background: transparent;
+    box-shadow: 0px 0px 6px rgba(252, 213, 129, 0.3);
+    transition: all 0.3s ease;
+}
+
+MainWindow QLabel#IconClock:hover {
+    background-color: rgba(252, 213, 129, 0.2);
+    box-shadow: 0px 0px 12px rgba(213, 41, 65, 0.45);
+}
+
+/* ==================== WINDOW CONTROL BUTTONS ==================== */
+MainWindow QPushButton#btnMinimize,
+MainWindow QPushButton#btnMaximize,
+MainWindow QPushButton#btnClose {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+MainWindow QPushButton#btnMinimize:hover,
+MainWindow QPushButton#btnMaximize:hover {
+    background-color: rgba(252, 213, 129, 0.25);
+}
+
+MainWindow QPushButton#btnClose:hover {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+
+MainWindow QPushButton#btnClose:pressed {
+    background-color: #990D35;
+}
+
+/* ==================== THEME SWITCH BUTTON ==================== */
+MainWindow QPushButton#btnTheme {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin-left: 12px;
+    transition: all 0.3s ease;
+}
+
+MainWindow QPushButton#btnTheme:hover {
+    background: radial-gradient(circle, rgba(252,213,129,0.4) 30%, rgba(252,213,129,0) 70%);
+    box-shadow: 0 0 10px rgba(213,41,65,0.35);
+}
+
+MainWindow QPushButton#btnTheme:pressed {
+    background: radial-gradient(circle, rgba(153,13,53,0.5) 35%, rgba(153,13,53,0) 70%);
+    box-shadow: inset 0 0 5px rgba(153,13,53,0.3);
+}
+
+MainWindow QPushButton#btnTheme:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* ==================== CENTRAL LABEL ==================== */
+MainWindow QLabel#label {
+    font-family: "Montserrat Black", "Britannic Bold", "Poppins ExtraBold";
+    font-size: 42px;
+    font-weight: 900;
+    color: #D52941;
+    margin-top: 10px;
+    margin-bottom: 14px;
+    letter-spacing: 1.2px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* ==================== TAB WIDGET ==================== */
+MainWindow QTabWidget::pane {
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    background-color: #FFF8E8;
+}
+
+MainWindow QTabBar {
+    qproperty-expanding: true;
+    qproperty-drawBase: 0;
+    alignment: center;
+    font-family: "Poppins SemiBold", "Segoe UI Semibold", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+MainWindow QTabBar::tab {
+    background-color: #FFF3D8;
+    color: #41521F;
+    padding: 10px 0;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border: none;
+    min-width: 0;
+    text-align: center;
+    transition: all 0.25s ease;
+}
+
+MainWindow QTabBar::tab:hover {
+    background-color: #FCD581;
+}
+
+MainWindow QTabBar::tab:selected {
+    background-color: #D52941;
+    color: #FFF8E8;
+    border-bottom: 3px solid #990D35;
+}
+
+MainWindow QTabBar::scroller,
+MainWindow QTabBar QToolButton {
+    width: 0;
+    height: 0;
+    border: none;
+}
+
+MainWindow QTabWidget::tab-bar {
+    alignment: center;
+}
+
+/* ==================== STATUS BAR ==================== */
+MainWindow QStatusBar {
+    background-color: #FFF8E8;
+    border-top: 1px solid #FCD581;
+    font-family: "Open Sans", "Segoe UI";
+    font-size: 13px;
+    color: #41521F;
+}
+
+/* ==================== SCROLLBAR ==================== */
+MainWindow QScrollBar:vertical {
+    background: #FFF8E8;
+    width: 10px;
+    border-radius: 4px;
+}
+
+MainWindow QScrollBar::handle:vertical {
+    background: #FCD581;
+    border-radius: 4px;
+}
+
+MainWindow QScrollBar::handle:vertical:hover {
+    background: #D52941;
+}
+
+/* ==================== TOOLTIP ==================== */
+QToolTip {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    color: #41521F;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: "Open Sans", "Segoe UI";
+}
+
+/* ==================== CLOCK WINDOW ==================== */
+ClockWindow {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    font-family: "Poppins", "Segoe UI", sans-serif;
+    color: #41521F;
+    transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+ClockWindow[hovered="true"] {
+    background-color: #FFF2D5;
+    border: 1px solid #E6B566;
+    box-shadow: 0 0 10px rgba(252, 213, 129, 0.4);
+}
+
+ClockWindow QLabel#labelMainTime {
+    font-family: "Montserrat Black", "Britannic Bold", "Poppins ExtraBold";
+    font-size: 70px;
+    font-weight: 900;
+    color: #D52941;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+ClockWindow QLabel#labelZone {
+    font-family: "Open Sans";
+    font-size: 11pt;
+    color: #416165;
+    text-align: center;
+}
+
+ClockWindow QCheckBox#checkFormat12 {
+    font-family: "Poppins";
+    font-size: 13px;
+    color: #41521F;
+    spacing: 4px;
+}
+
+ClockWindow QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid #FCD581;
+    background: #FFF8E8;
+}
+
+ClockWindow QCheckBox::indicator:checked {
+    background: #D52941;
+    image: url(:/resources/icons/checkmark.png);
+}
+
+ClockWindow QListWidget#listClocks {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    padding: 4px;
+    font-family: "Open Sans";
+    font-size: 20px;
+    color: #41521F;
+}
+
+ClockWindow QListWidget::item {
+    padding: 5px 8px;
+    border-radius: 5px;
+}
+
+ClockWindow QListWidget::item:hover {
+    background-color: #FFF2D5;
+    border: 1px solid #FCD581;
+    color: #41521F;
+}
+
+ClockWindow QListWidget::item:selected {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+
+ClockWindow QPushButton#btnAddClock,
+ClockWindow QPushButton#btnRemoveClock {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-family: "Poppins SemiBold";
+    font-size: 13px;
+    color: #41521F;
+    transition: all 0.2s ease;
+}
+
+ClockWindow QPushButton#btnAddClock:hover,
+ClockWindow QPushButton#btnRemoveClock:hover {
+    background: #D52941;
+    color: #FFF8E8;
+}
+
+ClockWindow QPushButton#btnAddClock:pressed,
+ClockWindow QPushButton#btnRemoveClock:pressed {
+    background: #990D35;
+    color: #FFF8E8;
+}
+
+/* ==================== CLOCK SETTINGS DIALOG ==================== */
+ClockSettingsDialog {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    font-family: "Poppins", "Segoe UI", sans-serif;
+    color: #41521F;
+}
+
+ClockSettingsDialog QLabel#label {
+    font-family: "Poppins SemiBold";
+    font-size: 15px;
+    color: #D52941;
+    padding-bottom: 4px;
+}
+
+ClockSettingsDialog QComboBox#comboZone {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: "Open Sans";
+    font-size: 13px;
+}
+ClockSettingsDialog QComboBox#comboZone:hover {
+    border-color: #D52941;
+}
+ClockSettingsDialog QComboBox#comboZone::drop-down {
+    border: none;
+    width: 20px;
+}
+
+ClockSettingsDialog QDialogButtonBox QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-family: "Poppins SemiBold";
+    font-size: 13px;
+    color: #41521F;
+}
+ClockSettingsDialog QDialogButtonBox QPushButton:hover {
+    background: #D52941;
+    color: #FFF8E8;
+}
+ClockSettingsDialog QDialogButtonBox QPushButton:pressed {
+    background: #990D35;
+    color: #FFF8E8;
+}
+/* ==================== STOPWATCH WINDOW ==================== */
+StopwatchWindow {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    font-family: "Poppins", "Segoe UI", sans-serif;
+    color: #41521F;
+}
+
+StopwatchWindow QLabel#labelTime {
+    font-family: "Montserrat Black", "Poppins ExtraBold";
+    font-size: 58px;
+    font-weight: 900;
+    color: #D52941;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+StopwatchWindow QPushButton#btnStartStop,
+StopwatchWindow QPushButton#btnLap {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-family: "Poppins SemiBold";
+    font-size: 14px;
+    color: #41521F;
+    transition: all 0.25s ease;
+}
+
+StopwatchWindow QPushButton#btnStartStop:hover,
+StopwatchWindow QPushButton#btnLap:hover {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+
+StopwatchWindow QPushButton#btnStartStop:pressed,
+StopwatchWindow QPushButton#btnLap:pressed {
+    background-color: #990D35;
+    color: #FFF8E8;
+}
+
+StopwatchWindow QPushButton {
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+}
+StopwatchWindow QPushButton:hover {
+    background-color: rgba(252, 213, 129, 0.25);
+}
+
+StopwatchWindow QListWidget#listLaps {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    font-family: "Open Sans";
+    font-size: 14px;
+    color: #41521F;
+    padding: 4px;
+}
+StopwatchWindow QListWidget::item {
+    padding: 5px 8px;
+    border-radius: 5px;
+}
+StopwatchWindow QListWidget::item:selected {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+
+StopwatchWindow QListWidget::item[minLap="true"] {
+    background-color: rgba(65, 82, 31, 0.25);
+}
+
+StopwatchWindow QListWidget::item[maxLap="true"] {
+    background-color: rgba(153, 13, 53, 0.25);
+}
+
+QToolTip {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    color: #41521F;
+    font-family: "Open Sans";
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 5px 8px;
+}
+
+
+/* ==================== STOPWATCH WINDOW — LIGHT THEME ==================== */
+StopwatchWindow {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    font-family: "Poppins", "Segoe UI", sans-serif;
+    color: #41521F;
+}
+
+StopwatchWindow QLabel#labelTime {
+    font-family: "Montserrat Black", "Poppins ExtraBold";
+    font-size: 58px;
+    color: #D52941;
+    text-align: center;
+}
+
+StopwatchWindow QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    padding: 6px 16px;
+    font-family: "Poppins SemiBold";
+    font-size: 14px;
+    color: #41521F;
+    transition: all 0.25s ease;
+}
+StopwatchWindow QPushButton:hover {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+StopwatchWindow QPushButton:pressed {
+    background-color: #990D35;
+    color: #FFF8E8;
+}
+
+StopwatchWindow QListWidget {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    padding: 4px;
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+}
+/* ==================== STOPWATCH WINDOW ==================== */
+StopwatchWindow QListWidget#listLaps {
+    background-color: #fff5eb;
+    border: 1px solid #f1d6b3;
+    border-radius: 8px;
+    padding: 4px;
+    font-family: "Open Sans";
+    font-size: 14px;
+    color: #3a2e1f;
+}
+
+StopwatchWindow QListWidget::item {
+    background-color: transparent;
+    padding: 5px 8px;
+    border-radius: 5px;
+}
+
+/* Підсвічування при наведенні на коло */
+StopwatchWindow QListWidget::item:hover {
+    background-color: rgba(252, 213, 129, 0.25);  /* теплий золотистий фон */
+    border: 1px solid #FCD581;
+    color: #3a2e1f;
+}
+
+StopwatchWindow QListWidget::item:selected {
+    background-color: rgba(213, 41, 65, 120); /* #D52941 з альфою */
+    color: #FFF8E8;
+}
+
+StopwatchWindow QPushButton#btnLap:disabled {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #E8E2CC, stop:1 #D9CCA8);
+    color: rgba(65, 82, 31, 0.55);
+    border: 1px solid #E0D7B5;
+    opacity: 0.85;
+}
+
+/* ==================== ALARM WINDOW ==================== */
+AlarmWindow {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    font-family: "Poppins", "Segoe UI", sans-serif;
+    color: #41521F;
+}
+
+AlarmWindow QListWidget#listAlarms {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+AlarmWindow QListWidget::item {
+    background-color: transparent;
+    border-radius: 8px;
+    margin: 2px;
+}
+
+AlarmWindow QPushButton#btnAdd,
+AlarmWindow QPushButton#btnRemove {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    padding: 6px 16px;
+    font-family: "Poppins SemiBold";
+    font-size: 14px;
+    color: #41521F;
+    transition: all 0.25s ease;
+}
+
+AlarmWindow QPushButton#btnAdd:hover,
+AlarmWindow QPushButton#btnRemove:hover {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+
+AlarmWindow QPushButton#btnAdd:pressed,
+AlarmWindow QPushButton#btnRemove:pressed {
+    background-color: #990D35;
+    color: #FFF8E8;
+}
+
+/* ==================== ALARM ITEM ==================== */
+AlarmItemWidget {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    padding: 6px 12px;
+    transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+AlarmItemWidget[hovered="true"] {
+    background-color: #FFF2D5;
+    border: 1px solid #E6B566;
+    box-shadow: 0 0 8px rgba(252, 213, 129, 0.4);
+}
+
+AlarmItemWidget QLabel#labelTime {
+    font-family: "Montserrat Black", "Poppins ExtraBold";
+    font-size: 36px;
+    font-weight: 900;
+    color: #D52941;
+}
+
+AlarmItemWidget QLabel#labelName {
+    font-family: "Poppins SemiBold";
+    font-size: 15px;
+    color: #41521F;
+}
+
+AlarmItemWidget QLabel#labelRepeat {
+    font-family: "Poppins";
+    font-size: 13px;
+    color: #6B6B5F;
+}
+
+AlarmItemWidget QPushButton#btnToggle {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 36px;
+    min-height: 36px;
+    transition: background-color 200ms ease;
+}
+AlarmItemWidget QPushButton#btnToggle:hover {
+    background-color: rgba(252, 213, 129, 0.25);
+}
+
+/* ==================== ALARM SETTINGS DIALOG  ==================== */
+AlarmSettingsDialog {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    border-radius: 12px;
+    font-family: "Poppins", "Segoe UI", sans-serif;
+    color: #41521F;
+}
+
+AlarmSettingsDialog QLabel {
+    font-family: "Poppins SemiBold";
+    font-size: 12px;
+    color: #41521F;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding-bottom: 2px;
+}
+
+AlarmSettingsDialog QLabel#label {
+    font-family: "Poppins SemiBold";
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: #41521F;
+    text-transform: uppercase;
+    margin-right: 4px;
+}
+
+AlarmSettingsDialog QTimeEdit,
+AlarmSettingsDialog QLineEdit,
+AlarmSettingsDialog QComboBox {
+    background-color: #fffdf8;
+    border: 1px solid #FCD581;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+}
+
+AlarmSettingsDialog QComboBox::drop-down {
+    border: none;
+    width: 14px;
+    background: transparent;
+}
+
+AlarmSettingsDialog QGroupBox {
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-family: "Poppins SemiBold";
+    font-size: 12px;
+    color: #41521F;
+}
+
+AlarmSettingsDialog QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 3px;
+    background-color: #FFF8E8;
+}
+
+AlarmSettingsDialog QCheckBox {
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+}
+
+AlarmSettingsDialog QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid #FCD581;
+    background: #FFF8E8;
+}
+
+AlarmSettingsDialog QCheckBox::indicator:checked {
+    background-color: #D52941;
+    image: url(:/resources/icons/checkmark.png);
+}
+
+AlarmSettingsDialog QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-family: "Poppins SemiBold";
+    font-size: 13px;
+    color: #41521F;
+    transition: all 0.25s ease;
+}
+
+AlarmSettingsDialog QPushButton:hover {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+
+AlarmSettingsDialog QPushButton:pressed {
+    background-color: #990D35;
+    color: #FFF8E8;
+}
+
+QToolTip {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    color: #41521F;
+    font-family: "Open Sans";
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 5px 8px;
+}
+/* ==================== TABLES ==================== */
+
+TimerWindow QTableWidget {
+    background-color: #FFF8E8;
+    alternate-background-color: #FFF3CF;
+    border: 1px solid #F5D488;
+    border-radius: 8px;
+    gridline-color: #EED38C;
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+    selection-background-color: #F6C6C3;
+    selection-color: #2B2B2B;
+    outline: none;
+}
+
+TimerWindow QHeaderView::section {
+    background-color: #FCE9B8;
+    color: #3E3A22;
+    font-family: "Poppins SemiBold";
+    font-size: 13px;
+    padding: 5px 8px;
+    border: none;
+    border-bottom: 1px solid #EED38C;
+}
+
+TimerWindow QTableCornerButton::section {
+    background-color: #FCE9B8;
+    border: none;
+}
+
+TimerWindow QTableWidget::item {
+    padding: 6px 8px;
+    border: none;
+    background-color: transparent;
+}
+
+TimerWindow QTableWidget::item:hover {
+    background-color: rgba(252, 213, 129, 0.35);
+}
+
+TimerWindow QTableWidget::item:selected {
+    background-color: #F6C6C3;
+    color: #2B2B2B;
+    border: none;
+}
+
+SettingsTimerDialog QTableWidget#tableRecommendations QHeaderView::section {
+    background-color: #FAE5A8;
+    color: #4B3C22;
+    border: none;
+    border-bottom: 1px solid #EED38C;
+    padding: 6px 8px;
+    font-family: "Poppins Medium";
+    font-size: 13px;
+}
+
+SettingsTimerDialog QTableWidget#tableRecommendations QTableCornerButton::section {
+    background-color: #FAE5A8;
+    border: none;
+}
+
+SettingsTimerDialog QTableWidget#tableRecommendations {
+    border: 1px solid #F5D488;
+    border-radius: 8px;
+    background-color: #FFF8E8;
+    gridline-color: transparent;
+}
+
+SettingsTimerDialog QTableWidget#tableRecommendations::item {
+    padding: 5px 8px;
+    border: none;
+}
+
+SettingsTimerDialog QTableWidget#tableRecommendations::item:hover {
+    background-color: rgba(252, 213, 129, 0.45);
+    color: #3E4021;
+    border: none;
+}
+
+SettingsTimerDialog QTableWidget#tableRecommendations::item:selected {
+    background-color: #F6C6C3;
+    color: #2B2B2B;
+    border: none;
+}
+
+/* ---------------- SCROLLBARS ---------------- */
+QScrollBar:vertical {
+    background: transparent;
+    width: 12px;
+}
+
+QScrollBar::handle:vertical {
+    background: #FCD581;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #D52941;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+    background: none;
+    border: none;
+}
+
+/* ==================== HISTORY TABLE ==================== */
+HistoryTimerWindow QTableWidget {
+    background-color: #FFF8E8;
+    alternate-background-color: #FFF3CF;
+    border: 1px solid #F5D488;
+    border-radius: 8px;
+    gridline-color: #EED38C;
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+    selection-background-color: #F6C6C3;
+    selection-color: #2B2B2B;
+    outline: none;
+}
+
+HistoryTimerWindow QHeaderView::section {
+    background-color: #FCE9B8;
+    color: #3E3A22;
+    font-family: "Poppins SemiBold";
+    font-size: 13px;
+    padding: 5px 8px;
+    border: none;
+    border-bottom: 1px solid #EED38C;
+}
+
+HistoryTimerWindow QTableCornerButton::section {
+    background-color: #FCE9B8;
+    border: none;
+}
+
+HistoryTimerWindow QTableWidget::item {
+    padding: 5px 8px;
+    border: none;
+    background-color: transparent;
+}
+
+HistoryTimerWindow QTableWidget::item:hover {
+    background-color: rgba(252, 213, 129, 0.35);
+}
+
+HistoryTimerWindow QTableWidget::item:selected {
+    background-color: #F6C6C3;
+    color: #2B2B2B;
+}
+
+HistoryTimerWindow QTableWidget QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFFBE8, stop:1 #FCD581);
+    border: 1px solid #E6C76A;
+    border-radius: 6px;
+    padding: 3px 10px;
+    color: #41521F;
+    font-family: "Poppins SemiBold";
+    font-size: 12px;
+}
+
+HistoryTimerWindow QTableWidget QPushButton:hover {
+    background: #D52941;
+    color: #FFF8E8;
+}
+
+HistoryTimerWindow QTableWidget QPushButton:pressed {
+    background: #990D35;
+    color: #FFF8E8;
+}
+
+
+/* ---------- BUTTONS ---------- */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #FFF8E8, stop:1 #FCD581);
+    border: 1px solid #FCD581;
+    border-radius: 10px;
+    padding: 6px 14px;
+    color: #41521F;
+    font-family: "Poppins SemiBold";
+    font-size: 13px;
+    transition: all 0.25s ease;
+}
+QPushButton:hover {
+    background-color: #D52941;
+    color: #FFF8E8;
+}
+QPushButton:pressed {
+    background-color: #990D35;
+    color: #FFF8E8;
+}
+
+/* ---------- COMBOBOXES ---------- */
+QComboBox {
+    background-color: #fffdf8;
+    border: 1px solid #FCD581;
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 14px;
+    background: transparent;
+}
+
+/* ---------- CHECKBOXES ---------- */
+QCheckBox {
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid #FCD581;
+    background: #FFF8E8;
+}
+QCheckBox::indicator:checked {
+    background-color: #D52941;
+    image: url(:/resources/icons/checkmark.png);
+}
+
+/* ---------- GROUPBOXES ---------- */
+QGroupBox {
+    border: 1px solid #FCD581;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-family: "Poppins SemiBold";
+    font-size: 12px;
+    color: #41521F;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 3px;
+    background-color: #FFF8E8;
+}
+
+/* ---------- SPINBOX, LINEEDIT, TIMEEDIT ---------- */
+QSpinBox, QLineEdit, QDateTimeEdit {
+    background-color: #fffdf8;
+    border: 1px solid #FCD581;
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-family: "Open Sans";
+    font-size: 13px;
+    color: #41521F;
+}
+
+/* ---------- DIALOG BUTTON BOX ---------- */
+QDialogButtonBox QPushButton {
+    min-width: 80px;
+}
+
+/* ---------- SCROLLBARS ---------- */
+QScrollBar:vertical {
+    background: #FFF8E8;
+    width: 12px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: #FCD581;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #D52941;
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+    height: 0px;
+}
+
+/* ---------- TOOLTIP ---------- */
+QToolTip {
+    background-color: #FFF8E8;
+    border: 1px solid #FCD581;
+    color: #41521F;
+    font-family: "Open Sans";
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 5px 8px;
+}

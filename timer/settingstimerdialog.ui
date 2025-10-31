@@ -57,6 +57,9 @@
              <property name="text">
               <string>Browse</string>
              </property>
+             <property name="icon">
+              <iconset theme="QIcon::ThemeIcon::AudioCard"/>
+             </property>
             </widget>
            </item>
           </layout>
@@ -79,6 +82,9 @@
             <widget class="QPushButton" name="btnReminderPath">
              <property name="text">
               <string>Browse</string>
+             </property>
+             <property name="icon">
+              <iconset theme="QIcon::ThemeIcon::AudioCard"/>
              </property>
             </widget>
            </item>
@@ -106,6 +112,9 @@
           <property name="text">
            <string>Browse</string>
           </property>
+          <property name="icon">
+           <iconset theme="QIcon::ThemeIcon::FolderOpen"/>
+          </property>
          </widget>
         </item>
        </layout>
@@ -121,7 +130,7 @@
      <item>
       <widget class="QCheckBox" name="checkBox">
        <property name="text">
-        <string>Add Recommendation</string>
+        <string>Add recommendation</string>
        </property>
       </widget>
      </item>

@@ -1,18 +1,34 @@
 <RCC>
-    <qresource prefix="/">
-        <file>resources/icons/alarmclock.png</file>
-        <file>resources/icons/clock.png</file>
-        <file>resources/icons/timer.png</file>
-        <file>resources/icons/stopwatch.png</file>
-        <file>resources/icons/timertray.png</file>
-        <file>resources/icons/switch_off.png</file>
-        <file>resources/icons/switch_on.png</file>
-        <file>resources/icons/toggle_off.png</file>
-        <file>resources/icons/toggle_on.png</file>
-        <file>resources/icons/datatransfer.png</file>
-    </qresource>
     <qresource prefix="/s">
         <file>resources/sounds/soundtimer.wav</file>
         <file>resources/sounds/soundalarm.wav</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>resources/icons/alarmclock.png</file>
+        <file>resources/icons/clock.png</file>
+        <file>resources/icons/datatransfer.png</file>
+        <file>resources/icons/stopwatch.png</file>
+        <file>resources/icons/timer.png</file>
+        <file>resources/icons/toggle_off.png</file>
+        <file>resources/icons/toggle_on.png</file>
+        <file>resources/icons/exittrayb.png</file>
+        <file>resources/icons/windowControl/iconsmartclockb.png</file>
+        <file>resources/icons/windowControl/iconsmartclockw.png</file>
+        <file>style/darkTheme.qss</file>
+        <file>style/lightTheme.qss</file>
+        <file>resources/icons/moon.png</file>
+        <file>resources/icons/sunicon.png</file>
+        <file>resources/icons/windowControl/closeD.png</file>
+        <file>resources/icons/windowControl/closeL.png</file>
+        <file>resources/icons/windowControl/maximizeD.png</file>
+        <file>resources/icons/windowControl/maximizeL.png</file>
+        <file>resources/icons/windowControl/minimize2D.png</file>
+        <file>resources/icons/windowControl/minimize2L.png</file>
+        <file>resources/icons/windowControl/minimizeD.png</file>
+        <file>resources/icons/windowControl/minimizeL.png</file>
+        <file>resources/icons/alarmclockD.png</file>
+        <file>resources/icons/clockD.png</file>
+        <file>resources/icons/stopwatchD.png</file>
+        <file>resources/icons/timerD.png</file>
     </qresource>
 </RCC>

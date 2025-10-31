@@ -30,6 +30,7 @@ private slots:
     void onRemoveClock();
     void onToggleFormat(bool checked);
 
+
 private:
     Ui::ClockWindow *ui;
     QTimer timer;

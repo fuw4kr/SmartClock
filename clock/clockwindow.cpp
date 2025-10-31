@@ -8,6 +8,10 @@
 #include <QMessageBox>
 #include <QTimeZone>
 #include <QShortcut>
+#include <QPropertyAnimation>
+#include <QEasingCurve>
+#include <QEvent>
+#include <QStyle>
 
 ClockWindow::ClockWindow(QWidget *parent)
     : QDialog(parent)
@@ -59,6 +63,8 @@ void ClockWindow::onAddClock()
         ci.zone = dlg.getSelectedZone();
         clocks.append(ci);
         ui->listClocks->addItem(timeTextFor(ci));
+        ui->listClocks->setVisible(true);
+        updateListTexts();
         saveToJson();
     }
 }
@@ -84,6 +90,8 @@ void ClockWindow::onRemoveClock()
         delete ui->listClocks->takeItem(row);
     }
 
+    ui->listClocks->setVisible(!clocks.isEmpty());
+    updateListTexts();
     saveToJson();
 }
 
@@ -106,9 +114,35 @@ QString ClockWindow::timeTextFor(const ClockInfo &ci) const
 
 void ClockWindow::updateListTexts()
 {
+    if (clocks.isEmpty()) {
+        QPropertyAnimation *anim = new QPropertyAnimation(ui->listClocks, "maximumHeight");
+        anim->setDuration(200);
+        anim->setStartValue(ui->listClocks->height());
+        anim->setEndValue(0);
+        anim->setEasingCurve(QEasingCurve::InOutQuad);
+        connect(anim, &QPropertyAnimation::finished, [this]() {
+            ui->listClocks->setVisible(false);
+        });
+        anim->start(QAbstractAnimation::DeleteWhenStopped);
+        return;
+    }
+
+    ui->listClocks->setVisible(true);
+
     for (int i = 0; i < clocks.size(); ++i)
         if (auto item = ui->listClocks->item(i))
             item->setText(timeTextFor(clocks[i]));
+
+    int rowHeight = 28;
+    int maxVisible = 6;
+    int newHeight = qMin(clocks.size(), maxVisible) * rowHeight + 10;
+
+    QPropertyAnimation *anim = new QPropertyAnimation(ui->listClocks, "maximumHeight");
+    anim->setDuration(250);
+    anim->setStartValue(ui->listClocks->height());
+    anim->setEndValue(newHeight);
+    anim->setEasingCurve(QEasingCurve::OutCubic);
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void ClockWindow::saveToJson() const
@@ -137,7 +171,10 @@ void ClockWindow::loadFromJson()
     ui->listClocks->clearSelection();
 
     QFile file("clocks.json");
-    if (!file.exists()) return;
+    if (!file.exists()) {
+        ui->listClocks->setVisible(false);
+        return;
+    }
     if (!file.open(QIODevice::ReadOnly)) return;
 
     QByteArray data = file.readAll();
@@ -163,4 +200,7 @@ void ClockWindow::loadFromJson()
             ui->listClocks->addItem(timeTextFor(ci));
         }
     }
+
+    ui->listClocks->setVisible(!clocks.isEmpty());
 }
+
