@@ -30,5 +30,13 @@
         <file>resources/icons/clockD.png</file>
         <file>resources/icons/stopwatchD.png</file>
         <file>resources/icons/timerD.png</file>
+        <file>resources/icons/sortdownD.png</file>
+        <file>resources/icons/sortdownL.png</file>
+        <file>resources/icons/sortupD.png</file>
+        <file>resources/icons/sortupL.png</file>
+        <file>resources/icons/settingsL.png</file>
+        <file>resources/icons/settingsD.png</file>
+        <file>resources/icons/plusL.png</file>
+        <file>resources/icons/plusD.png</file>
     </qresource>
 </RCC>

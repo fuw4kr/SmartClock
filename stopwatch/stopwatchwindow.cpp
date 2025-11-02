@@ -17,12 +17,11 @@
 #include <QPropertyAnimation>
 #include <QStackedWidget>
 
-
 #include <QStyledItemDelegate>
 #include <QPainter>
 
 namespace {
-enum { RoleLapFlag = Qt::UserRole + 100 }; // 0=none, 1=min, 2=max
+enum { RoleLapFlag = Qt::UserRole + 100 };
 }
 
 class LapHighlightDelegate : public QStyledItemDelegate {
@@ -35,19 +34,15 @@ public:
         QStyleOptionViewItem opt = option;
         initStyleOption(&opt, index);
 
-        // Визначаємо тему (світла/темна)
         const QWidget *w = opt.widget;
         const bool isLight =
             (w ? w->palette().color(QPalette::Window).lightness() > 180 : true);
 
-        // Кольори підсвітки
         const QColor good = isLight ? QColor(182,235,195,255) : QColor(70,130,90,180);
         const QColor bad  = isLight ? QColor(247,196,192,255) : QColor(130,60,60,180);
 
-        // Який тип кола?
         const int flag = index.data(RoleLapFlag).toInt();
 
-        // Малюємо фон самі (перед стандартним рендером)
         p->save();
         p->setRenderHint(QPainter::Antialiasing, true);
 
@@ -62,8 +57,6 @@ public:
             p->drawRoundedRect(r, 5, 5);
         }
 
-        // Якщо айтем виділений користувачем — додаємо напівпрозорий оверлей,
-        // але не перебиваємо наш зелений/червоний фон.
         if (opt.state.testFlag(QStyle::State_Selected)) {
             QColor sel = isLight ? QColor(213, 41, 65, 120) : QColor(213,41,65,160);
             p->setBrush(sel);
@@ -73,7 +66,6 @@ public:
 
         p->restore();
 
-        // Тепер малюємо текст/іконки стандартно (без «жорсткого» фону)
         QStyleOptionViewItem clean = opt;
         clean.backgroundBrush = Qt::NoBrush;
         QStyledItemDelegate::paint(p, clean, index);
@@ -161,10 +153,8 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
         QSettings settings("SmartClockApp", "Stopwatch");
         settings.setValue("analogMode", analogMode);
     });
-
     loadFromFile();
     connect(qApp, &QCoreApplication::aboutToQuit, this, &StopwatchWindow::saveToFile);
-
     ui->listLaps->setItemDelegate(new LapHighlightDelegate(ui->listLaps));
 
 }
@@ -209,7 +199,7 @@ void StopwatchWindow::onLapClicked()
         if (!lapTimes.isEmpty())
             segMs = lapTimes.last().msecsTo(nowLap);
         else
-            segMs = elapsed.msecsSinceStartOfDay(); // перше коло = від старту
+            segMs = elapsed.msecsSinceStartOfDay();
 
         const QString lapTimeStr = nowLap.toString("mm:ss.zzz").left(8);
         const QString deltaStr   = QTime(0, 0).addMSecs(segMs).toString("mm:ss.zzz").left(8);
@@ -244,7 +234,6 @@ void StopwatchWindow::updateLapColors()
         if (lapDurations[i] > maxVal) { maxVal = lapDurations[i]; maxIndex = i; }
     }
 
-    // Скидаємо маркери
     for (int i = 0; i < ui->listLaps->count(); ++i) {
         if (auto *it = ui->listLaps->item(i)) {
             it->setData(RoleLapFlag, 0);
@@ -256,15 +245,11 @@ void StopwatchWindow::updateLapColors()
     const int invMax = count - 1 - maxIndex;
 
     if (invMin >= 0 && invMin < count)
-        ui->listLaps->item(invMin)->setData(RoleLapFlag, 1); // best (зелений)
+        ui->listLaps->item(invMin)->setData(RoleLapFlag, 1);
     if (invMax >= 0 && invMax < count)
-        ui->listLaps->item(invMax)->setData(RoleLapFlag, 2); // worst (червоний)
-
-    // Перемалювати список
+        ui->listLaps->item(invMax)->setData(RoleLapFlag, 2);
     ui->listLaps->viewport()->update();
 }
-
-
 
 void StopwatchWindow::resetStopwatch()
 {

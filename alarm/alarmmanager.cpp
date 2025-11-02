@@ -17,8 +17,10 @@ AlarmManager::AlarmManager(QObject *parent)
 void AlarmManager::addAlarm(const AlarmData &data)
 {
     AlarmData a = data;
+    QDateTime now = QDateTime::currentDateTime();
     if (!a.nextTrigger.isValid())
-        a.nextTrigger = computeInitialTrigger(a.time);
+        a.nextTrigger = computeNextTrigger(a, now);
+
     alarms.append(a);
     emit alarmsUpdated();
 }
@@ -58,26 +60,34 @@ QDateTime AlarmManager::computeInitialTrigger(const QTime &t)
 QDateTime AlarmManager::computeNextTrigger(const AlarmData &a, const QDateTime &after)
 {
     QDate d = after.date();
-    for (int i = 0; i < 7; ++i) {
+    QTime t = a.time;
+    QDateTime candidate(d, t);
+
+    if (candidate <= after)
         d = d.addDays(1);
+
+    QString repeat = a.repeatMode;
+    static QMap<QString, int> map = {
+        {"Mon", 1}, {"Tue", 2}, {"Wed", 3}, {"Thu", 4},
+        {"Fri", 5}, {"Sat", 6}, {"Sun", 7}
+    };
+
+    for (int i = 0; i < 7; ++i) {
         int dow = d.dayOfWeek();
-        QString day;
-        switch (dow) {
-        case 1: day = "Mon"; break;
-        case 2: day = "Tue"; break;
-        case 3: day = "Wed"; break;
-        case 4: day = "Thu"; break;
-        case 5: day = "Fri"; break;
-        case 6: day = "Sat"; break;
-        case 7: day = "Sun"; break;
-        }
-        if (a.repeatMode == "Every day" ||
-            (a.repeatMode == "Weekdays" && dow <= 5) ||
-            (a.repeatMode == "Weekends" && dow >= 6) ||
-            (a.repeatMode == "Specific days" && a.days.contains(day)))
-            return QDateTime(d, a.time);
+
+        bool ok =
+            (repeat == "Every day") ||
+            (repeat == "Weekdays" && dow <= 5) ||
+            (repeat == "Weekends" && dow >= 6) ||
+            (repeat == "Specific days" && a.days.contains(map.key(dow)));
+
+        if (ok)
+            return QDateTime(d, t);
+
+        d = d.addDays(1);
     }
-    return QDateTime(after.date().addDays(1), a.time);
+
+    return QDateTime(after.date().addDays(1), t);
 }
 
 void AlarmManager::checkAlarms()

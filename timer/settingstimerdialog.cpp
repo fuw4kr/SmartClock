@@ -22,7 +22,6 @@ SettingsTimerDialog::SettingsTimerDialog(TimerManager *manager, QWidget *parent)
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &SettingsTimerDialog::accept);
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &SettingsTimerDialog::reject);
 
-
     ui->widget_3->setMaximumHeight(0);
     ui->widget_3->setVisible(false);
     connect(ui->checkSound, &QCheckBox::toggled, this, [this](bool checked) {
@@ -101,7 +100,6 @@ void SettingsTimerDialog::animateWidget(QWidget *widget, bool expand)
 
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
-
 
 void SettingsTimerDialog::onAddRecommendationClicked()
 {
@@ -201,7 +199,6 @@ void SettingsTimerDialog::setRecommendationsEnabled(bool enabled)
     ui->widgetRecommendations->setMaximumHeight(enabled ? ui->widgetRecommendations->sizeHint().height() : 0);
     ui->checkBox->blockSignals(false);
 }
-
 
 void SettingsTimerDialog::setActionPath(const QString &path)
 {

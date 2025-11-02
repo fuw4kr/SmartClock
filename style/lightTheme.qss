@@ -1,4 +1,4 @@
-/* ==================== MAIN WINDOW ==================== */
+
 MainWindow {
     background-color: #FFF8E8;
     border-radius: 8px;
@@ -6,7 +6,7 @@ MainWindow {
     color: #41521F;
 }
 
-/* ==================== TITLE BAR ==================== */
+
 MainWindow QWidget#titleBar {
     background-color: #FFF8E8;
     border-bottom: 1px solid #FCD581;
@@ -21,7 +21,7 @@ MainWindow QLabel#titleLabel {
     padding-left: 8px;
 }
 
-/* ==================== ICON ==================== */
+
 MainWindow QLabel#IconClock {
     border: none;
     margin-left: 8px;
@@ -33,16 +33,13 @@ MainWindow QLabel#IconClock {
     qproperty-scaledContents: true;
     border-radius: 6px;
     background: transparent;
-    box-shadow: 0px 0px 6px rgba(252, 213, 129, 0.3);
-    transition: all 0.3s ease;
 }
 
 MainWindow QLabel#IconClock:hover {
     background-color: rgba(252, 213, 129, 0.2);
-    box-shadow: 0px 0px 12px rgba(213, 41, 65, 0.45);
 }
 
-/* ==================== WINDOW CONTROL BUTTONS ==================== */
+
 MainWindow QPushButton#btnMinimize,
 MainWindow QPushButton#btnMaximize,
 MainWindow QPushButton#btnClose {
@@ -66,7 +63,7 @@ MainWindow QPushButton#btnClose:pressed {
     background-color: #990D35;
 }
 
-/* ==================== THEME SWITCH BUTTON ==================== */
+
 MainWindow QPushButton#btnTheme {
     background: transparent;
     border: none;
@@ -75,25 +72,26 @@ MainWindow QPushButton#btnTheme {
     height: 32px;
     padding: 0;
     margin-left: 12px;
-    transition: all 0.3s ease;
 }
 
 MainWindow QPushButton#btnTheme:hover {
-    background: radial-gradient(circle, rgba(252,213,129,0.4) 30%, rgba(252,213,129,0) 70%);
-    box-shadow: 0 0 10px rgba(213,41,65,0.35);
+background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                            stop:0.3 rgba(252,213,129,102),
+                            stop:0.7 rgba(252,213,129,0));
 }
 
 MainWindow QPushButton#btnTheme:pressed {
-    background: radial-gradient(circle, rgba(153,13,53,0.5) 35%, rgba(153,13,53,0) 70%);
-    box-shadow: inset 0 0 5px rgba(153,13,53,0.3);
+background: qradialgradient(cx:0.5, cy:0.5, radius:0.5,
+                            stop:0.35 rgba(153,13,53,128),
+                            stop:0.7 rgba(153,13,53,0));
+
 }
 
 MainWindow QPushButton#btnTheme:focus {
     outline: none;
-    box-shadow: none;
 }
 
-/* ==================== CENTRAL LABEL ==================== */
+
 MainWindow QLabel#label {
     font-family: "Montserrat Black", "Britannic Bold", "Poppins ExtraBold";
     font-size: 42px;
@@ -106,7 +104,7 @@ MainWindow QLabel#label {
     text-transform: uppercase;
 }
 
-/* ==================== TAB WIDGET ==================== */
+
 MainWindow QTabWidget::pane {
     border: 1px solid #FCD581;
     border-radius: 10px;
@@ -132,7 +130,6 @@ MainWindow QTabBar::tab {
     border: none;
     min-width: 0;
     text-align: center;
-    transition: all 0.25s ease;
 }
 
 MainWindow QTabBar::tab:hover {
@@ -156,7 +153,7 @@ MainWindow QTabWidget::tab-bar {
     alignment: center;
 }
 
-/* ==================== STATUS BAR ==================== */
+
 MainWindow QStatusBar {
     background-color: #FFF8E8;
     border-top: 1px solid #FCD581;
@@ -165,7 +162,7 @@ MainWindow QStatusBar {
     color: #41521F;
 }
 
-/* ==================== SCROLLBAR ==================== */
+
 MainWindow QScrollBar:vertical {
     background: #FFF8E8;
     width: 10px;
@@ -181,7 +178,7 @@ MainWindow QScrollBar::handle:vertical:hover {
     background: #D52941;
 }
 
-/* ==================== TOOLTIP ==================== */
+
 QToolTip {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -192,20 +189,18 @@ QToolTip {
     font-family: "Open Sans", "Segoe UI";
 }
 
-/* ==================== CLOCK WINDOW ==================== */
+
 ClockWindow {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
     border-radius: 10px;
     font-family: "Poppins", "Segoe UI", sans-serif;
     color: #41521F;
-    transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 ClockWindow[hovered="true"] {
     background-color: #FFF2D5;
     border: 1px solid #E6B566;
-    box-shadow: 0 0 10px rgba(252, 213, 129, 0.4);
 }
 
 ClockWindow QLabel#labelMainTime {
@@ -280,7 +275,6 @@ ClockWindow QPushButton#btnRemoveClock {
     font-family: "Poppins SemiBold";
     font-size: 13px;
     color: #41521F;
-    transition: all 0.2s ease;
 }
 
 ClockWindow QPushButton#btnAddClock:hover,
@@ -295,7 +289,7 @@ ClockWindow QPushButton#btnRemoveClock:pressed {
     color: #FFF8E8;
 }
 
-/* ==================== CLOCK SETTINGS DIALOG ==================== */
+
 ClockSettingsDialog {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -345,7 +339,7 @@ ClockSettingsDialog QDialogButtonBox QPushButton:pressed {
     background: #990D35;
     color: #FFF8E8;
 }
-/* ==================== STOPWATCH WINDOW ==================== */
+
 StopwatchWindow {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -373,7 +367,6 @@ StopwatchWindow QPushButton#btnLap {
     font-family: "Poppins SemiBold";
     font-size: 14px;
     color: #41521F;
-    transition: all 0.25s ease;
 }
 
 StopwatchWindow QPushButton#btnStartStop:hover,
@@ -434,7 +427,6 @@ QToolTip {
 }
 
 
-/* ==================== STOPWATCH WINDOW — LIGHT THEME ==================== */
 StopwatchWindow {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -459,7 +451,6 @@ StopwatchWindow QPushButton {
     font-family: "Poppins SemiBold";
     font-size: 14px;
     color: #41521F;
-    transition: all 0.25s ease;
 }
 StopwatchWindow QPushButton:hover {
     background-color: #D52941;
@@ -479,7 +470,7 @@ StopwatchWindow QListWidget {
     font-size: 13px;
     color: #41521F;
 }
-/* ==================== STOPWATCH WINDOW ==================== */
+
 StopwatchWindow QListWidget#listLaps {
     background-color: #fff5eb;
     border: 1px solid #f1d6b3;
@@ -496,15 +487,15 @@ StopwatchWindow QListWidget::item {
     border-radius: 5px;
 }
 
-/* Підсвічування при наведенні на коло */
+
 StopwatchWindow QListWidget::item:hover {
-    background-color: rgba(252, 213, 129, 0.25);  /* теплий золотистий фон */
+    background-color: rgba(252, 213, 129, 0.25);
     border: 1px solid #FCD581;
     color: #3a2e1f;
 }
 
 StopwatchWindow QListWidget::item:selected {
-    background-color: rgba(213, 41, 65, 120); /* #D52941 з альфою */
+    background-color: rgba(213, 41, 65, 120);
     color: #FFF8E8;
 }
 
@@ -516,7 +507,7 @@ StopwatchWindow QPushButton#btnLap:disabled {
     opacity: 0.85;
 }
 
-/* ==================== ALARM WINDOW ==================== */
+
 AlarmWindow {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -548,7 +539,6 @@ AlarmWindow QPushButton#btnRemove {
     font-family: "Poppins SemiBold";
     font-size: 14px;
     color: #41521F;
-    transition: all 0.25s ease;
 }
 
 AlarmWindow QPushButton#btnAdd:hover,
@@ -563,19 +553,17 @@ AlarmWindow QPushButton#btnRemove:pressed {
     color: #FFF8E8;
 }
 
-/* ==================== ALARM ITEM ==================== */
+
 AlarmItemWidget {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
     border-radius: 10px;
     padding: 6px 12px;
-    transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 AlarmItemWidget[hovered="true"] {
     background-color: #FFF2D5;
     border: 1px solid #E6B566;
-    box-shadow: 0 0 8px rgba(252, 213, 129, 0.4);
 }
 
 AlarmItemWidget QLabel#labelTime {
@@ -604,13 +592,12 @@ AlarmItemWidget QPushButton#btnToggle {
     padding: 4px;
     min-width: 36px;
     min-height: 36px;
-    transition: background-color 200ms ease;
 }
 AlarmItemWidget QPushButton#btnToggle:hover {
     background-color: rgba(252, 213, 129, 0.25);
 }
 
-/* ==================== ALARM SETTINGS DIALOG  ==================== */
+
 AlarmSettingsDialog {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -699,7 +686,6 @@ AlarmSettingsDialog QPushButton {
     font-family: "Poppins SemiBold";
     font-size: 13px;
     color: #41521F;
-    transition: all 0.25s ease;
 }
 
 AlarmSettingsDialog QPushButton:hover {
@@ -721,7 +707,7 @@ QToolTip {
     border-radius: 6px;
     padding: 5px 8px;
 }
-/* ==================== TABLES ==================== */
+
 
 TimerWindow QTableWidget {
     background-color: #FFF8E8;
@@ -807,7 +793,7 @@ SettingsTimerDialog QTableWidget#tableRecommendations::item:selected {
     border: none;
 }
 
-/* ---------------- SCROLLBARS ---------------- */
+
 QScrollBar:vertical {
     background: transparent;
     width: 12px;
@@ -829,7 +815,7 @@ QScrollBar::sub-line:vertical {
     border: none;
 }
 
-/* ==================== HISTORY TABLE ==================== */
+
 HistoryTimerWindow QTableWidget {
     background-color: #FFF8E8;
     alternate-background-color: #FFF3CF;
@@ -896,7 +882,6 @@ HistoryTimerWindow QTableWidget QPushButton:pressed {
 }
 
 
-/* ---------- BUTTONS ---------- */
 QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                                 stop:0 #FFF8E8, stop:1 #FCD581);
@@ -906,7 +891,6 @@ QPushButton {
     color: #41521F;
     font-family: "Poppins SemiBold";
     font-size: 13px;
-    transition: all 0.25s ease;
 }
 QPushButton:hover {
     background-color: #D52941;
@@ -917,7 +901,7 @@ QPushButton:pressed {
     color: #FFF8E8;
 }
 
-/* ---------- COMBOBOXES ---------- */
+
 QComboBox {
     background-color: #fffdf8;
     border: 1px solid #FCD581;
@@ -933,7 +917,7 @@ QComboBox::drop-down {
     background: transparent;
 }
 
-/* ---------- CHECKBOXES ---------- */
+
 QCheckBox {
     font-family: "Open Sans";
     font-size: 13px;
@@ -951,7 +935,7 @@ QCheckBox::indicator:checked {
     image: url(:/resources/icons/checkmark.png);
 }
 
-/* ---------- GROUPBOXES ---------- */
+
 QGroupBox {
     border: 1px solid #FCD581;
     border-radius: 8px;
@@ -967,7 +951,7 @@ QGroupBox::title {
     background-color: #FFF8E8;
 }
 
-/* ---------- SPINBOX, LINEEDIT, TIMEEDIT ---------- */
+
 QSpinBox, QLineEdit, QDateTimeEdit {
     background-color: #fffdf8;
     border: 1px solid #FCD581;
@@ -978,12 +962,12 @@ QSpinBox, QLineEdit, QDateTimeEdit {
     color: #41521F;
 }
 
-/* ---------- DIALOG BUTTON BOX ---------- */
+
 QDialogButtonBox QPushButton {
     min-width: 80px;
 }
 
-/* ---------- SCROLLBARS ---------- */
+
 QScrollBar:vertical {
     background: #FFF8E8;
     width: 12px;
@@ -1003,7 +987,7 @@ QScrollBar::sub-line:vertical {
     height: 0px;
 }
 
-/* ---------- TOOLTIP ---------- */
+
 QToolTip {
     background-color: #FFF8E8;
     border: 1px solid #FCD581;
@@ -1012,4 +996,113 @@ QToolTip {
     font-size: 12px;
     border-radius: 6px;
     padding: 5px 8px;
+}
+
+
+QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #d8dce6;
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #222;
+}
+
+QComboBox:hover {
+    border: 1px solid #b9b4ff;
+}
+
+QComboBox:focus {
+    border: 1px solid #6c63ff;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 24px;
+    border-left: 1px solid #d8dce6;
+    background-color: #f1f3f9;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+QComboBox::down-arrow {
+    image: url(:/resources/icons/sortdownL.png);
+    width: 20px;
+    height: 20px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #d8dce6;
+    selection-background-color: #e8ebf7;
+    selection-color: #2e2bff;
+    border-radius: 6px;
+}
+
+QComboBox QAbstractItemView::item {
+    height: 20px;
+    padding: 4px 10px;
+}
+
+
+ QSpinBox {
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #222;
+}
+ QSpinBox::up-button {
+    image: url(:/resources/icons/sortupL.png);
+    width: 20px;
+    height: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+}
+
+ QSpinBox::down-button {
+    image: url(:/resources/icons/sortdownL.png);
+    width: 20px;
+    height: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+}
+
+ QDateTimeEdit::down-button{
+    image: url(:/resources/icons/sortdownL.png);
+    width: 20px;
+    height: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+}
+
+ QDateTimeEdit::up-button {
+     image: url(:/resources/icons/sortupL.png);
+     width: 20px;
+     height: 10px;
+     border: 1px solid #cccccc;
+     border-radius: 5px;
+}
+
+ QRadioButton {
+    color: #1e1e1e;
+    font-size: 14px;
+    spacing: 6px;
+}
+
+ QRadioButton::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    border: 2px solid #bbb;
+    background-color: white;
+}
+
+ QRadioButton::indicator:hover {
+    border-color: #2563eb;
+}
+
+ QRadioButton::indicator:checked {
+    border-color: #2563eb;
+    background-color: #2563eb;
 }

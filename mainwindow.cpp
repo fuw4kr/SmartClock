@@ -93,10 +93,11 @@ void MainWindow::setupTrayIcon()
 
     connect(openTimer, &QAction::hovered, this, [this]() {
         QString info = QString(
-                           "<b>⏱ Timer</b><br>"
-                           "🟢 Running: <b>%1</b><br>"
-                           "⚪ Finished: <b>%2</b>"
-                           ).arg(getRunningTimers()).arg(getFinishedTimers());
+                                 "<b>⏱ Timer</b><br>"
+                                 "🟢 Running: <b>%1</b><br>"
+                                 "⚪ Finished: <b>%2</b>"
+                                 ).arg(QString::number(getRunningTimers()))
+                                 .arg(QString::number(getFinishedTimers()));
         QToolTip::showText(QCursor::pos(), info);
     });
 
@@ -247,7 +248,7 @@ void MainWindow::updateMaximizeIcon(bool maxed) {
         path = isLight
                    ? ":/resources/icons/windowControl/maximizeL.png"
                    : ":/resources/icons/windowControl/maximizeD.png";
-    
+
     ui->btnMaximize->setIcon(QIcon(path));
 }
 
@@ -277,6 +278,9 @@ void MainWindow::updateThemeIcon()
     ui->btnMinimize->setIcon(QIcon(isLight
                                        ? ":/resources/icons/windowControl/minimizeL.png"
                                        : ":/resources/icons/windowControl/minimizeD.png"));
+    ui->btnMaximize->setIcon(QIcon(isLight
+                                       ? ":/resources/icons/windowControl/maximizeL.png"
+                                       : ":/resources/icons/windowControl/maximizeD.png"));
     ui->btnClose->setIcon(QIcon(isLight
                                     ? ":/resources/icons/windowControl/closeL.png"
                                     : ":/resources/icons/windowControl/closeD.png"));
@@ -284,6 +288,22 @@ void MainWindow::updateThemeIcon()
     ui->IconClock->setPixmap(QPixmap(isLight
                                          ? ":/resources/icons/windowControl/iconsmartclockb.png"
                                          : ":/resources/icons/windowControl/iconsmartclockw.png"));
+
+    auto btnAdd = timerWindow->findChild<QPushButton*>("btnAdd");
+    if (btnAdd) {
+        btnAdd->setIcon(QIcon(isLight
+            ? ":/resources/icons/plusL.png"
+            : ":/resources/icons/plusD.png"));
+        btnAdd->setIconSize(QSize(24, 24));
+    }
+
+    auto btnSettings = timerWindow->findChild<QPushButton*>("btnSettings");
+    if (btnSettings) {
+        btnSettings->setIcon(QIcon(isLight
+            ? ":/resources/icons/settingsL.png"
+            : ":/resources/icons/settingsD.png"));
+        btnSettings->setIconSize(QSize(24, 24));
+    }
 
     ui->tabWidget->setTabIcon(0, QIcon(isLight
                                            ? ":/resources/icons/clock.png"

@@ -133,7 +133,6 @@ QString AlarmWindow::alarmsFilePath() const
     return base + "/alarms.json";
 }
 
-
 QString AlarmWindow::getNextAlarmString() const
 {
 const QList<AlarmData> list = manager->getAlarms();

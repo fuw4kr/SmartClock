@@ -75,7 +75,6 @@ void AlarmItemWidget::setAlarmData(const AlarmData &data)
 
 }
 
-
 bool AlarmItemWidget::event(QEvent *e)
 {
     switch (e->type()) {

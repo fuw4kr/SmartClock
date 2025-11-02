@@ -1,91 +1,111 @@
 cmake_minimum_required(VERSION 3.16)
-
 project(SmartClock VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
+# ======================================================
+# === BASIC SETTINGS
+# ======================================================
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Multimedia Test)
+qt_standard_project_setup()
 
-set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
+if (MSVC)
+    add_compile_options(/std:c++17 /Zc:__cplusplus)
+endif()
 
-        timer/timermanager.h timer/timermanager.cpp
-        timer/timerwindow.h timer/timerwindow.cpp timer/timerwindow.ui
-        clock/clockwindow.h clock/clockwindow.cpp clock/clockwindow.ui
-        alarm/alarmwindow.h alarm/alarmwindow.cpp alarm/alarmwindow.ui
-        stopwatch/stopwatchwindow.h stopwatch/stopwatchwindow.cpp stopwatch/stopwatchwindow.ui
-        timer/timereditdialog.h timer/timereditdialog.cpp timer/timereditdialog.ui
-        resources.qrc
-        timer/settingstimerdialog.h timer/settingstimerdialog.cpp timer/settingstimerdialog.ui
-        timer/historytimerwindow.h timer/historytimerwindow.cpp timer/historytimerwindow.ui
-        clock/clocksettingsdialog.h clock/clocksettingsdialog.cpp clock/clocksettingsdialog.ui
-        alarm/alarmmanager.h alarm/alarmmanager.cpp
-        alarm/alarmsettingsdialog.h alarm/alarmsettingsdialog.cpp alarm/alarmsettingsdialog.ui
-        alarm/alarmitemwidget.h alarm/alarmitemwidget.cpp alarm/alarmitemwidget.ui
-        stopwatch/stopwatchwindow.h stopwatch/stopwatchwindow.cpp stopwatch/stopwatchwindow.ui
-        stopwatch/analogstopwatchdial.h stopwatch/analogstopwatchdial.cpp
-        windowEdit/framelessWindow.cpp
-                windowEdit/framelessWindow.h
-                windowEdit/snapPreviewWindow.cpp
-                windowEdit/snapPreviewWindow.h
+# ======================================================
+# === SOURCE FILES
+# ======================================================
+set(SMARTCLOCK_SOURCES
+        mainwindow.cpp mainwindow.h mainwindow.ui
+
+        timer/timermanager.cpp timer/timermanager.h
+        timer/timerwindow.cpp timer/timerwindow.h timer/timerwindow.ui
+        timer/timereditdialog.cpp timer/timereditdialog.h timer/timereditdialog.ui
+        timer/settingstimerdialog.cpp timer/settingstimerdialog.h timer/settingstimerdialog.ui
+        timer/historytimerwindow.cpp timer/historytimerwindow.h timer/historytimerwindow.ui
+
+        clock/clockwindow.cpp clock/clockwindow.h clock/clockwindow.ui
+        clock/clocksettingsdialog.cpp clock/clocksettingsdialog.h clock/clocksettingsdialog.ui
+
+        alarm/alarmwindow.cpp alarm/alarmwindow.h alarm/alarmwindow.ui
+        alarm/alarmmanager.cpp alarm/alarmmanager.h
+        alarm/alarmsettingsdialog.cpp alarm/alarmsettingsdialog.h alarm/alarmsettingsdialog.ui
+        alarm/alarmitemwidget.cpp alarm/alarmitemwidget.h alarm/alarmitemwidget.ui
+
+        stopwatch/stopwatchwindow.cpp stopwatch/stopwatchwindow.h stopwatch/stopwatchwindow.ui
+        stopwatch/analogstopwatchdial.cpp stopwatch/analogstopwatchdial.h
+
+        windowEdit/framelessWindow.cpp windowEdit/framelessWindow.h
+        windowEdit/snapPreviewWindow.cpp windowEdit/snapPreviewWindow.h
+
+        thememanager.cpp thememanager.h
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(SmartClock
+# ======================================================
+# === RESOURCES
+# ======================================================
+qt_add_resources(SMARTCLOCK_RESOURCES resources.qrc)
+
+# ======================================================
+# === MAIN LIBRARY (core logic shared between app & tests)
+# ======================================================
+add_library(SmartClockLib STATIC
+        ${SMARTCLOCK_SOURCES}
+        ${SMARTCLOCK_RESOURCES}
+)
+
+target_link_libraries(SmartClockLib
+        PUBLIC
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::Multimedia
+)
+target_include_directories(SmartClockLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# ======================================================
+# === MAIN EXECUTABLE
+# ======================================================
+qt_add_executable(SmartClock
         MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-        thememanager.h thememanager.cpp
-        )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET SmartClock APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-        add_library(SmartClock SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+        main.cpp
+        ${SMARTCLOCK_RESOURCES}  # ресурси також для exe
+)
+
+target_link_libraries(SmartClock
+        PRIVATE
+        SmartClockLib
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::Multimedia
+)
+
+# --- Kill previous process before link (Windows only) ---
+if (WIN32)
+    add_custom_command(TARGET SmartClock
+            PRE_LINK
+            COMMAND taskkill /F /IM SmartClock.exe 2> NUL || exit 0
+            COMMENT "🧹 Killing previous SmartClock.exe if running..."
+    )
+endif()
+
+set_target_properties(SmartClock PROPERTIES WIN32_EXECUTABLE TRUE)
+qt_finalize_executable(SmartClock)
+
+# ======================================================
+# === CONNECT TESTS
+# ======================================================
+enable_testing()
+option(BUILD_TESTS "Build unit tests" ON)
+
+if(BUILD_TESTS)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/tests/CMakeLists.txt")
+        message(STATUS "Including GoogleTests...")
+        add_subdirectory(tests)
     else()
-        add_executable(SmartClock
-            ${PROJECT_SOURCES}
-        )
+        message(WARNING "Tests directory not found, skipping tests.")
     endif()
-endif()
-
-target_link_libraries(SmartClock PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia)
-
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.SmartClock)
-endif()
-set_target_properties(SmartClock PROPERTIES
-    ${BUNDLE_ID_OPTION}
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-)
-
-include(GNUInstallDirs)
-install(TARGETS SmartClock
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(SmartClock)
 endif()
