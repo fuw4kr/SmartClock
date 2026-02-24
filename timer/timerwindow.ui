@@ -31,18 +31,12 @@
         <property name="text">
          <string>Add</string>
         </property>
-        <property name="icon">
-         <iconset theme="QIcon::ThemeIcon::ListAdd"/>
-        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="btnSettings">
         <property name="text">
          <string>Settings</string>
-        </property>
-        <property name="icon">
-         <iconset theme="QIcon::ThemeIcon::DocumentProperties"/>
         </property>
        </widget>
       </item>

@@ -47,6 +47,8 @@ private:
     void loadFromFile();
     void updateLapColors();
     QStackedWidget *stackedView;
+
+    friend class StopwatchWindowTest_LapAndResetWork_Test;
 };
 
 #endif // STOPWATCHWINDOW_H

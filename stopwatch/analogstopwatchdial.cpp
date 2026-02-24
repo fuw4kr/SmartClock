@@ -14,6 +14,13 @@ void AnalogStopwatchDial::setElapsed(const QTime &time)
     elapsed = time;
     update();
 }
+void AnalogStopwatchDial::show() {
+    if (qEnvironmentVariableIsSet("TEST_MODE")) {
+        qDebug() << "[TEST_MODE] Suppressed Settings dialog";
+        return;
+    }
+    this->show();
+}
 
 void AnalogStopwatchDial::paintEvent(QPaintEvent *)
 {

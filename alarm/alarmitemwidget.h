@@ -30,5 +30,4 @@ private:
     AlarmData alarm;
 };
 
-
 #endif // ALARMITEMWIDGET_H

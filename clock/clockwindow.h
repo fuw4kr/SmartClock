@@ -30,7 +30,6 @@ private slots:
     void onRemoveClock();
     void onToggleFormat(bool checked);
 
-
 private:
     Ui::ClockWindow *ui;
     QTimer timer;
@@ -42,6 +41,24 @@ private:
 
     void loadFromJson();
     void saveToJson() const;
+
+    friend class ClockWindowTest_UpdatesMainTimeLabel_Test;
+    friend class ClockWindowTest_AddsAndRemovesClockSuccessfully_Test;
+    friend class ClockWindowTest_TimeTextForReturnsFormattedString_Test;
+    friend class ClockWindowEdgeTest_HandlesMultipleFormats_Test;
+    friend class ClockWindowEdgeTest_HandlesEmptyClockListInSave_Test;
+    friend class ClockWindowEdgeTest_TimeTextFormatContainsTimezoneName_Test;
+    friend class ClockWindowTest_TogglesFormat12hAndSavesJson_Test;
+    friend class ClockWindowTest_SavesAndLoadsClockDataFromJson_Test;
+    friend class ClockWindowTest_UpdateListTextsExpandsWhenHasClocks_Test;
+    friend class ClockWindowTest_UpdateListTextsHidesListWhenEmpty_Test;
+    friend class ClockWindowTest_SavedJsonContainsValidKeys_Test;
+    friend class ClockWindowTest_LoadsCorruptedJsonGracefully_Test;
+    friend class ClockWindowTest_HandlesEmptyJsonFileGracefully_Test;
+    friend class ClockWindowIntegrationTest_SaveLoadCycleKeepsFormatFlag_Test;
+    friend class ClockWindowIntegrationTest_AnimationRunsWithoutCrash_Test;
+    friend class ClockWindowIntegrationTest_MultipleUpdatesRefreshTimeLabel_Test;
+    friend class ClockWindowIntegrationTest_DeleteNonexistentFileDoesNotCrash_Test;
 };
 
 #endif // CLOCKWINDOW_H

@@ -11,6 +11,7 @@ class AnalogStopwatchDial : public QWidget
 public:
     explicit AnalogStopwatchDial(QWidget *parent = nullptr);
     void setElapsed(const QTime &time);
+    void show();
 
 protected:
     void paintEvent(QPaintEvent *event) override;

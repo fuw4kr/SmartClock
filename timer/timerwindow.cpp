@@ -70,19 +70,6 @@ TimerWindow::TimerWindow(QWidget *parent)
     ui->tableTimers->horizontalHeader()->setStretchLastSection(true);
     ui->tableTimers->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableTimers->setSelectionMode(QAbstractItemView::ExtendedSelection);
-
-    ui->tableTimers->setMouseTracking(true);
-    connect(ui->tableTimers, &QTableWidget::entered,
-            this, [this](const QModelIndex &index) {
-                ui->tableTimers->selectRow(index.row());
-            });
-
-    connect(ui->tableTimers, &QTableWidget::viewportEntered,
-            this, [this]() {
-                ui->tableTimers->clearSelection();
-            });
-
-
     ui->comboBox->clear();
     ui->comboBox->addItems({"All timers", "Running", "Paused", "Finished"});
 
@@ -484,12 +471,24 @@ void TimerWindow::updateNextUpLabel()
     TimerData next = manager.getNextTimer();
 
     if (!next.name.isEmpty()) {
-        int minutes = next.remaining / 60;
+        int hours = next.remaining / 3600;
+        int minutes = (next.remaining % 3600) / 60;
         int seconds = next.remaining % 60;
-        ui->labelNextUp->setText(QString("Next up: %1 (in %2:%3)")
+
+        QString timeText;
+        if (hours > 0)
+            timeText = QString("%1:%2:%3")
+                           .arg(hours, 2, 10, QLatin1Char('0'))
+                           .arg(minutes, 2, 10, QLatin1Char('0'))
+                           .arg(seconds, 2, 10, QLatin1Char('0'));
+        else
+            timeText = QString("%1:%2")
+                           .arg(minutes, 2, 10, QLatin1Char('0'))
+                           .arg(seconds, 2, 10, QLatin1Char('0'));
+
+        ui->labelNextUp->setText(QString("Next up: %1 (in %2)")
                                      .arg(next.name)
-                                     .arg(minutes, 2, 10, QLatin1Char('0'))
-                                     .arg(seconds, 2, 10, QLatin1Char('0')));
+                                     .arg(timeText));
 
 #ifdef Q_OS_WIN
         if (!next.name.isEmpty() && next.duration > 0) {
@@ -497,12 +496,13 @@ void TimerWindow::updateNextUpLabel()
             setTaskbarProgress(window(), percent, 100);
         } else {
             ui->labelNextUp->setText("Next up: None");
-#ifdef Q_OS_WIN
             setTaskbarProgress(window(), 0, 0);
-#endif
         }
 #endif
-        }
+    } else {
+        ui->labelNextUp->setText("Next up: None");
+#ifdef Q_OS_WIN
+        setTaskbarProgress(window(), 0, 0);
+#endif
     }
-
-
+}

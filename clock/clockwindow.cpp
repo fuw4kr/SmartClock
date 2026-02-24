@@ -74,6 +74,10 @@ void ClockWindow::onRemoveClock()
     auto selected = ui->listClocks->selectedItems();
 
     if (selected.isEmpty()) {
+        if (qEnvironmentVariableIsSet("TEST_MODE")) {
+            qDebug() << "[TEST_MODE] Suppressed Settings dialog";
+            return;
+        }
         QMessageBox::information(this, "No selection", "Please select at least one clock to delete.");
         return;
     }
