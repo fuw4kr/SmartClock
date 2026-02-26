@@ -9,6 +9,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include "analogstopwatchdial.h"
+#include "stopwatchmodel.h"
+#include "../controllers/stopwatchcontroller.h"
 
 namespace Ui {
 class StopwatchWindow;
@@ -21,30 +23,31 @@ class StopwatchWindow : public QDialog
 public:
     explicit StopwatchWindow(QWidget *parent = nullptr);
     ~StopwatchWindow();
+
+    void updateDisplay();
     QString getCurrentLapTimeString() const;
     QString getTotalTimeString() const;
+
+signals:
+    void startStopRequested();
+    void lapRequested();
+
+public slots:
+    void syncFromModel();
 
 private slots:
     void onStartStopClicked();
     void onLapClicked();
-    void updateDisplay();
-    void resetStopwatch();
 
 private:
     Ui::StopwatchWindow *ui;
     QTimer *timer;
-    QTime elapsed;
-    bool running = false;
-    QList<QTime> lapTimes;
-    QStringList lapTexts;
-    QList<int> lapDurations;
+    StopwatchModel *model;
+    StopwatchController *controller;
 
     AnalogStopwatchDial *analogDial;
     bool analogMode = false;
 
-    QString filePath() const;
-    void saveToFile() const;
-    void loadFromFile();
     void updateLapColors();
     QStackedWidget *stackedView;
 

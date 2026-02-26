@@ -1,22 +1,19 @@
 #include "clockwindow.h"
 #include "ui_clockwindow.h"
 #include "clocksettingsdialog.h"
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QMessageBox>
 #include <QTimeZone>
 #include <QShortcut>
 #include <QPropertyAnimation>
 #include <QEasingCurve>
-#include <QEvent>
-#include <QStyle>
+#include <QSignalBlocker>
+#include <QLocale>
+#include <QDebug>
 
 ClockWindow::ClockWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::ClockWindow)
-    , format12h(false)
+    , model(new ClockModel(this))
 {
     ui->setupUi(this);
     setWindowTitle("World Clock");
@@ -31,22 +28,35 @@ ClockWindow::ClockWindow(QWidget *parent)
     connect(&timer, &QTimer::timeout, this, &ClockWindow::updateTime);
     timer.start(1000);
 
-    loadFromJson();
-
-    ui->checkFormat12->setChecked(format12h);
+    controller = new ClockController(model, this, this);
+    ui->checkFormat12->setChecked(model->format12h());
     updateTime();
 }
 
 ClockWindow::~ClockWindow()
 {
-    saveToJson();
     delete ui;
+}
+
+void ClockWindow::syncFromModel()
+{
+    ui->listClocks->clearSelection();
+    ui->listClocks->clear();
+
+    const auto &clocks = model->clocks();
+    for (const auto &ci : clocks)
+        ui->listClocks->addItem(timeTextFor(ci));
+
+    QSignalBlocker blocker(ui->checkFormat12);
+    ui->checkFormat12->setChecked(model->format12h());
+
+    updateListTexts();
 }
 
 void ClockWindow::updateTime()
 {
     QLocale en(QLocale::English);
-    QString fmt = format12h ? "hh:mm:ss AP" : "HH:mm:ss";
+    QString fmt = model->format12h() ? "hh:mm:ss AP" : "HH:mm:ss";
 
     QDateTime now = QDateTime::currentDateTime();
     ui->labelMainTime->setText(en.toString(now.time(), fmt));
@@ -59,13 +69,7 @@ void ClockWindow::onAddClock()
 {
     ClockSettingsDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
-        ClockInfo ci;
-        ci.zone = dlg.getSelectedZone();
-        clocks.append(ci);
-        ui->listClocks->addItem(timeTextFor(ci));
-        ui->listClocks->setVisible(true);
-        updateListTexts();
-        saveToJson();
+        emit addClockRequested(dlg.getSelectedZone());
     }
 }
 
@@ -88,36 +92,26 @@ void ClockWindow::onRemoveClock()
         == QMessageBox::No)
         return;
 
-    for (auto *it : selected) {
-        int row = ui->listClocks->row(it);
-        clocks.removeAt(row);
-        delete ui->listClocks->takeItem(row);
-    }
-
-    ui->listClocks->setVisible(!clocks.isEmpty());
-    updateListTexts();
-    saveToJson();
+    QList<int> rows;
+    for (auto *it : selected)
+        rows << ui->listClocks->row(it);
+    emit removeClocksRequested(rows);
 }
 
 void ClockWindow::onToggleFormat(bool checked)
 {
-    format12h = checked;
+    emit formatToggled(checked);
     updateTime();
-    saveToJson();
 }
 
 QString ClockWindow::timeTextFor(const ClockInfo &ci) const
 {
-    QTimeZone tz(ci.zone.toUtf8());
-    QDateTime nowTz = QDateTime::currentDateTimeUtc().toTimeZone(tz);
-    QLocale en(QLocale::English);
-    QString fmt = format12h ? "hh:mm:ss AP" : "HH:mm:ss";
-    QString timeText = en.toString(nowTz.time(), fmt);
-    return QString("%1 — %2").arg(QString::fromUtf8(tz.id()), timeText);
+    return model->timeTextFor(ci);
 }
 
 void ClockWindow::updateListTexts()
 {
+    const auto &clocks = model->clocks();
     if (clocks.isEmpty()) {
         QPropertyAnimation *anim = new QPropertyAnimation(ui->listClocks, "maximumHeight");
         anim->setDuration(200);
@@ -148,63 +142,3 @@ void ClockWindow::updateListTexts()
     anim->setEasingCurve(QEasingCurve::OutCubic);
     anim->start(QAbstractAnimation::DeleteWhenStopped);
 }
-
-void ClockWindow::saveToJson() const
-{
-    QJsonObject root;
-    root["format12h"] = format12h;
-
-    QJsonArray arr;
-    for (const ClockInfo &ci : clocks) {
-        QJsonObject obj;
-        obj["zone"] = ci.zone;
-        arr.append(obj);
-    }
-    root["clocks"] = arr;
-
-    QJsonDocument doc(root);
-    QFile file("clocks.json");
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        file.write(doc.toJson(QJsonDocument::Indented));
-        file.close();
-    }
-}
-
-void ClockWindow::loadFromJson()
-{
-    ui->listClocks->clearSelection();
-
-    QFile file("clocks.json");
-    if (!file.exists()) {
-        ui->listClocks->setVisible(false);
-        return;
-    }
-    if (!file.open(QIODevice::ReadOnly)) return;
-
-    QByteArray data = file.readAll();
-    file.close();
-
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isObject()) return;
-
-    QJsonObject root = doc.object();
-    format12h = root.value("format12h").toBool(false);
-
-    clocks.clear();
-    ui->listClocks->clear();
-
-    QJsonArray arr = root.value("clocks").toArray();
-    for (const QJsonValue &v : arr) {
-        if (!v.isObject()) continue;
-        QJsonObject o = v.toObject();
-        ClockInfo ci;
-        ci.zone = o.value("zone").toString();
-        if (!ci.zone.isEmpty()) {
-            clocks.append(ci);
-            ui->listClocks->addItem(timeTextFor(ci));
-        }
-    }
-
-    ui->listClocks->setVisible(!clocks.isEmpty());
-}
-

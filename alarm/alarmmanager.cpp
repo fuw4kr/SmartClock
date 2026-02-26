@@ -1,14 +1,12 @@
 #include "alarmmanager.h"
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QFile>
-#include <QMessageBox>
+#include "jsonalarmstorage.h"
+#include <QTimer>
+#include <QMap>
+#include <utility>
 
-static const char* kDefaultSound = "qrc:/s/resources/sounds/soundalarm.wav";
-
-AlarmManager::AlarmManager(QObject *parent)
+AlarmManager::AlarmManager(QObject *parent, std::unique_ptr<IAlarmStorage> storage)
     : QObject(parent)
+    , storage(storage ? std::move(storage) : std::make_unique<JsonAlarmStorage>())
 {
     connect(&checkTimer, &QTimer::timeout, this, &AlarmManager::checkAlarms);
     checkTimer.start(1000);
@@ -48,6 +46,58 @@ QList<AlarmData> AlarmManager::getAlarms() const
     return alarms;
 }
 
+void AlarmManager::snoozeAlarm(const AlarmData &alarm, int minutes)
+{
+    const int idx = findAlarmIndex(alarm);
+    if (idx < 0)
+        return;
+    alarms[idx].nextTrigger = QDateTime::currentDateTime().addSecs(minutes * 60);
+    alarms[idx].enabled = true;
+    emit alarmsUpdated();
+}
+
+int AlarmManager::findAlarmIndex(const AlarmData &alarm) const
+{
+    for (int i = 0; i < alarms.size(); ++i) {
+        const auto &a = alarms[i];
+        if (a.name == alarm.name &&
+            a.time == alarm.time &&
+            a.repeatMode == alarm.repeatMode &&
+            a.days == alarm.days) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool AlarmManager::save()
+{
+    if (!storage)
+        return false;
+    return storage->save(alarms);
+}
+
+bool AlarmManager::load()
+{
+    if (!storage)
+        return false;
+    QList<AlarmData> loaded;
+    if (!storage->load(loaded))
+        return false;
+    alarms = loaded;
+    for (auto &a : alarms) {
+        if (!a.nextTrigger.isValid())
+            a.nextTrigger = computeInitialTrigger(a.time);
+    }
+    emit alarmsUpdated();
+    return true;
+}
+
+void AlarmManager::setStorage(std::unique_ptr<IAlarmStorage> storage)
+{
+    this->storage = std::move(storage);
+}
+
 QDateTime AlarmManager::computeInitialTrigger(const QTime &t)
 {
     QDateTime now = QDateTime::currentDateTime();
@@ -66,7 +116,17 @@ QDateTime AlarmManager::computeNextTrigger(const AlarmData &a, const QDateTime &
     if (candidate <= after)
         d = d.addDays(1);
 
-    QString repeat = a.repeatMode;
+    QDateTime weekly = computeWeeklyTrigger(a, d, t);
+    if (weekly.isValid())
+        return weekly;
+
+    return QDateTime(after.date().addDays(1), t);
+}
+
+QDateTime AlarmManager::computeWeeklyTrigger(const AlarmData &a, const QDate &startDate, const QTime &t)
+{
+    QDate d = startDate;
+    const RepeatMode repeat = a.repeatMode;
     static QMap<QString, int> map = {
         {"Mon", 1}, {"Tue", 2}, {"Wed", 3}, {"Thu", 4},
         {"Fri", 5}, {"Sat", 6}, {"Sun", 7}
@@ -75,11 +135,24 @@ QDateTime AlarmManager::computeNextTrigger(const AlarmData &a, const QDateTime &
     for (int i = 0; i < 7; ++i) {
         int dow = d.dayOfWeek();
 
-        bool ok =
-            (repeat == "Every day") ||
-            (repeat == "Weekdays" && dow <= 5) ||
-            (repeat == "Weekends" && dow >= 6) ||
-            (repeat == "Specific days" && a.days.contains(map.key(dow)));
+        bool ok = false;
+        switch (repeat) {
+        case RepeatMode::EveryDay:
+            ok = true;
+            break;
+        case RepeatMode::Weekdays:
+            ok = (dow <= 5);
+            break;
+        case RepeatMode::Weekends:
+            ok = (dow >= 6);
+            break;
+        case RepeatMode::SpecificDays:
+            ok = a.days.contains(map.key(dow));
+            break;
+        default:
+            ok = false;
+            break;
+        }
 
         if (ok)
             return QDateTime(d, t);
@@ -87,7 +160,37 @@ QDateTime AlarmManager::computeNextTrigger(const AlarmData &a, const QDateTime &
         d = d.addDays(1);
     }
 
-    return QDateTime(after.date().addDays(1), t);
+    return QDateTime();
+}
+
+bool AlarmManager::isOneTime(const AlarmData &a)
+{
+    return a.repeatMode == RepeatMode::Never || a.repeatMode == RepeatMode::Once;
+}
+
+bool AlarmManager::isDue(const AlarmData &a, const QDateTime &now)
+{
+    return a.nextTrigger.isValid() && a.nextTrigger <= now;
+}
+
+void AlarmManager::ensureNextTrigger(AlarmData &a)
+{
+    if (!a.nextTrigger.isValid())
+        a.nextTrigger = computeInitialTrigger(a.time);
+}
+
+void AlarmManager::handleTriggeredAlarm(AlarmData &a, const QDateTime &now)
+{
+    emit alarmTriggered(a);
+
+    if (isOneTime(a)) {
+        a.enabled = false;
+    } else {
+        a.nextTrigger = computeNextTrigger(a, now);
+        a.enabled = true;
+    }
+
+    emit alarmsUpdated();
 }
 
 void AlarmManager::checkAlarms()
@@ -98,102 +201,28 @@ void AlarmManager::checkAlarms()
         if (!a.enabled)
             continue;
 
-        if (!a.nextTrigger.isValid())
-            a.nextTrigger = computeInitialTrigger(a.time);
-
-        if (a.nextTrigger <= now) {
-            QSoundEffect *effect = new QSoundEffect(this);
-            const QString src = a.soundPath.isEmpty()
-                                    ? "qrc:/s/resources/sounds/soundalarm.wav"
-                                    : a.soundPath;
-            effect->setSource(QUrl(src));
-            effect->setVolume(1.0);
-            effect->play();
-
-            QMessageBox msg;
-            msg.setWindowTitle("Alarm");
-            msg.setText(QString("⏰ %1").arg(a.name.isEmpty() ? "Alarm" : a.name));
-
-            if (a.snooze) {
-                msg.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                msg.setButtonText(QMessageBox::Yes, "Snooze 5 min");
-                msg.setButtonText(QMessageBox::No, "Stop");
-            } else {
-                msg.setStandardButtons(QMessageBox::Ok);
-                msg.setButtonText(QMessageBox::Ok, "Stop");
-            }
-
-            int res = msg.exec();
-
-            if (effect->isPlaying())
-                effect->stop();
-            effect->deleteLater();
-
-            if (a.snooze && res == QMessageBox::Yes) {
-                a.nextTrigger = now.addSecs(5 * 60);
-                a.enabled = true;
-            }
-            else {
-                if (a.repeatMode == "Never" || a.repeatMode.toLower() == "once") {
-                    a.enabled = false;
-                } else {
-                    a.nextTrigger = computeNextTrigger(a, now);
-                    a.enabled = true;
-                }
-            }
-
-            emit alarmsUpdated();
-        }
+        ensureNextTrigger(a);
+        if (isDue(a, now))
+            handleTriggeredAlarm(a, now);
     }
 }
 
 void AlarmManager::saveToFile(const QString &path)
 {
-    QJsonArray arr;
-    for (const auto &a : alarms) {
-        QJsonObject o;
-        o["name"] = a.name;
-        o["time"] = a.time.toString("HH:mm:ss");
-        o["repeatMode"] = a.repeatMode;
-        o["days"] = QJsonArray::fromStringList(a.days);
-        o["soundPath"] = a.soundPath;
-        o["snooze"] = a.snooze;
-        o["enabled"] = a.enabled;
-        o["nextTrigger"] = a.nextTrigger.toString(Qt::ISODate);
-        arr.append(o);
-    }
-    QJsonDocument doc(arr);
-    QFile f(path);
-    if (f.open(QIODevice::WriteOnly)) {
-        f.write(doc.toJson());
-        f.close();
-    }
+    JsonAlarmStorage storage(path);
+    storage.save(alarms);
 }
 
 void AlarmManager::loadFromFile(const QString &path)
 {
-    QFile f(path);
-    if (!f.exists() || !f.open(QIODevice::ReadOnly)) return;
-    const auto doc = QJsonDocument::fromJson(f.readAll());
-    f.close();
-    alarms.clear();
-    if (!doc.isArray()) return;
-
-    for (const auto &v : doc.array()) {
-        QJsonObject o = v.toObject();
-        AlarmData a;
-        a.name = o["name"].toString();
-        a.time = QTime::fromString(o["time"].toString(), "HH:mm:ss");
-        a.repeatMode = o["repeatMode"].toString();
-        for (const auto &d : o["days"].toArray())
-            a.days << d.toString();
-        a.soundPath = o["soundPath"].toString();
-        a.snooze = o["snooze"].toBool();
-        a.enabled = o["enabled"].toBool();
-        a.nextTrigger = QDateTime::fromString(o["nextTrigger"].toString(), Qt::ISODate);
+    JsonAlarmStorage storage(path);
+    QList<AlarmData> loaded;
+    if (!storage.load(loaded))
+        return;
+    alarms = loaded;
+    for (auto &a : alarms) {
         if (!a.nextTrigger.isValid())
             a.nextTrigger = computeInitialTrigger(a.time);
-        alarms.append(a);
     }
     emit alarmsUpdated();
 }

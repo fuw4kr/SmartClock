@@ -7,14 +7,12 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QCheckBox>
+#include "clockmodel.h"
+#include "../controllers/clockcontroller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ClockWindow; }
 QT_END_NAMESPACE
-
-struct ClockInfo {
-    QString zone;
-};
 
 class ClockWindow : public QDialog
 {
@@ -23,6 +21,14 @@ class ClockWindow : public QDialog
 public:
     explicit ClockWindow(QWidget *parent = nullptr);
     ~ClockWindow();
+
+signals:
+    void addClockRequested(const QString &zone);
+    void removeClocksRequested(const QList<int> &rows);
+    void formatToggled(bool enabled);
+
+public slots:
+    void syncFromModel();
 
 private slots:
     void updateTime();
@@ -33,14 +39,11 @@ private slots:
 private:
     Ui::ClockWindow *ui;
     QTimer timer;
-    QList<ClockInfo> clocks;
-    bool format12h;
+    ClockModel *model;
+    ClockController *controller;
 
     void updateListTexts();
     QString timeTextFor(const ClockInfo &ci) const;
-
-    void loadFromJson();
-    void saveToJson() const;
 
     friend class ClockWindowTest_UpdatesMainTimeLabel_Test;
     friend class ClockWindowTest_AddsAndRemovesClockSuccessfully_Test;

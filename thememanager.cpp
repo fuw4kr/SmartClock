@@ -1,6 +1,5 @@
 #include "thememanager.h"
 #include <QFile>
-#include <QApplication>
 #include <QDebug>
 
 ThemeManager& ThemeManager::instance() {
@@ -18,8 +17,9 @@ void ThemeManager::applyTheme(Theme theme)
     QFile file(path);
     if (file.open(QFile::ReadOnly | QFile::Text)) {
         QString style = file.readAll();
-        qApp->setStyleSheet(style);
-        qDebug()<<"setStyleSheet: " << path;
+        emit themeChanged(style);
+        qDebug() << "themeChanged: " << path;
+        return;
     }
-    qDebug()<<"setStyleSheet failed: " << path;
+    qDebug() << "theme load failed: " << path;
 }

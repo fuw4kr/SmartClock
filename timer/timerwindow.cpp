@@ -56,6 +56,7 @@ static void setTaskbarProgress(QWidget *widget, int value, int maximum)
 TimerWindow::TimerWindow(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TimerWindow)
+    , manager(new TimerManager(this))
 {
     ui->setupUi(this);
 
@@ -78,7 +79,7 @@ TimerWindow::TimerWindow(QWidget *parent)
     connect(ui->btnHistory, &QPushButton::clicked, this, &TimerWindow::onHistory);
     connect(ui->btnStartPause, &QPushButton::clicked, this, &TimerWindow::onStartPauseTimer);
     connect(ui->btnDelete, &QPushButton::clicked, this, &TimerWindow::onDeleteTimer);
-    connect(&manager, &TimerManager::timersUpdated, this, &TimerWindow::updateTable);
+    connect(manager, &TimerManager::timersUpdated, this, &TimerWindow::updateTable);
     connect(ui->tableTimers, &QTableWidget::itemDoubleClicked, this, &TimerWindow::onEditTimer);
 
     auto delShortcut = new QShortcut(QKeySequence(Qt::Key_Delete), this);
@@ -87,7 +88,7 @@ TimerWindow::TimerWindow(QWidget *parent)
     auto spaceShortcut = new QShortcut(QKeySequence(Qt::Key_Space), this);
     connect(spaceShortcut, &QShortcut::activated, this, &TimerWindow::onStartPauseTimer);
 
-    connect(&manager, &TimerManager::timerFinished, this, [this](const QString &name) {
+    connect(manager, &TimerManager::timerFinished, this, [this](const QString &name) {
         QSettings settings("SmartTimerApp", "SmartTimer");
         bool soundEnabled = settings.value("playSound", true).toBool();
 
@@ -95,7 +96,7 @@ TimerWindow::TimerWindow(QWidget *parent)
         QString reminder = settings.value("reminderSoundPath").toString();
 
         QString type = "Normal";
-        for (const auto &t : manager.getTimers()) {
+        for (const auto &t : manager->getTimers()) {
             if (t.name == name) {
                 type = t.type;
                 break;
@@ -134,7 +135,7 @@ TimerWindow::TimerWindow(QWidget *parent)
         QMessageBox::information(this, "Timer Finished", msg);
     });
 
-    connect(&manager, &TimerManager::recommendationAvailable, this, [this](const QString &nextName) {
+    connect(manager, &TimerManager::recommendationAvailable, this, [this](const QString &nextName) {
         QMessageBox msgBox(this);
         msgBox.setWindowTitle("Recommendation");
         msgBox.setText(QString("Timer finished! Recommended to start timer '%1'.").arg(nextName));
@@ -143,10 +144,10 @@ TimerWindow::TimerWindow(QWidget *parent)
         msgBox.exec();
 
         if (msgBox.clickedButton() == startBtn) {
-            auto timers = manager.getTimers();
+            auto timers = manager->getTimers();
             for (int i = 0; i < timers.size(); ++i) {
                 if (timers[i].name == nextName) {
-                    manager.startTimer(i);
+                    manager->startTimer(i);
                     QMessageBox::information(this, "Started", QString("Timer '%1' started.").arg(nextName));
                     break;
                 }
@@ -154,12 +155,8 @@ TimerWindow::TimerWindow(QWidget *parent)
         }
     });
 
-    manager.loadFromFile(timersFilePath());
+    controller = new TimerController(manager, this, this);
     loadHistoryJson();
-
-    connect(qApp, &QCoreApplication::aboutToQuit, this, [this]() {
-        manager.saveToFile(timersFilePath());
-    });
 
     QSettings settings("SmartTimerApp", "SmartTimer");
 
@@ -173,13 +170,13 @@ TimerWindow::TimerWindow(QWidget *parent)
     connect(ui->btnStartGroup, &QPushButton::clicked, this, [this]() {
         const QString group = ui->comboGroups->currentText();
         if (!group.isEmpty()) {
-            manager.startGroup(group);
+            manager->startGroup(group);
             QMessageBox::information(this, "Group started",
                                      QString("Started all timers in group '%1'").arg(group));
         }
     });
 
-    connect(&manager, &TimerManager::timersUpdated, this, &TimerWindow::updateNextUpLabel);
+    connect(manager, &TimerManager::timersUpdated, this, &TimerWindow::updateNextUpLabel);
 
 }
 
@@ -192,14 +189,13 @@ void TimerWindow::onAddTimer()
 {
     TimerEditDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        manager.addTimer(dialog.getName(), dialog.getTotalSeconds(), dialog.getType(), dialog.getGroup());
-        updateTable();
+        emit addTimerRequested(dialog.getName(), dialog.getTotalSeconds(), dialog.getType(), dialog.getGroup());
     }
 }
 
 void TimerWindow::onSettings()
 {
-    SettingsTimerDialog dialog(&manager, this);
+    SettingsTimerDialog dialog(manager, this);
 
     QSettings settings("SmartTimerApp", "SmartTimer");
 
@@ -225,7 +221,7 @@ void TimerWindow::onSettings()
         settings.setValue("continueAfterExit", continueAfterExit);
         settings.setValue("recommendationsEnabled", dialog.isRecommendationsEnabled());
 
-        manager.saveToFile(timersFilePath());
+        emit saveRequested();
     }
 }
 
@@ -234,7 +230,7 @@ void TimerWindow::onHistory()
     HistoryTimerWindow dialog(&deletedTimers, this);
 
     connect(&dialog, &HistoryTimerWindow::restoreTimer, this, [this](const TimerData &t) {
-        manager.addTimer(t.name, t.duration);
+        emit addTimerRequested(t.name, t.duration, t.type, t.groupName);
         saveHistoryJson();
         updateTable();
     });
@@ -254,16 +250,10 @@ void TimerWindow::onStartPauseTimer()
         return;
     }
 
-    for (const auto &item : selectedItems) {
-        int row = item.row();
-        QList<TimerData> timers = manager.getTimers();
-        if (row >= timers.size()) continue;
-
-        if (timers[row].running)
-            manager.pauseTimer(row);
-        else
-            manager.startTimer(row);
-    }
+    QList<int> rows;
+    for (const auto &item : selectedItems)
+        rows << item.row();
+    emit startPauseRequested(rows);
 }
 
 void TimerWindow::onDeleteTimer()
@@ -283,13 +273,13 @@ void TimerWindow::onDeleteTimer()
     for (auto &i : selected) rows << i.row();
     std::sort(rows.begin(), rows.end(), std::greater<int>());
 
-    auto timers = manager.getTimers();
+    auto timers = manager->getTimers();
     for (int r : rows) {
         if (r >= 0 && r < timers.size()) {
             deletedTimers.append(timers[r]);
-            manager.removeTimer(r);
         }
     }
+    emit deleteTimersRequested(rows);
 
     saveHistoryJson();
     updateTable();
@@ -306,7 +296,7 @@ void TimerWindow::onEditTimer()
         return;
     }
 
-    QList<TimerData> timers = manager.getTimers();
+    QList<TimerData> timers = manager->getTimers();
     if (row >= timers.size())
         return;
 
@@ -335,7 +325,7 @@ void TimerWindow::onEditTimer()
             return;
         }
 
-        manager.editTimer(row, newName, newSeconds, newType, "Default");
+        emit editTimerRequested(row, newName, newSeconds, newType, "Default");
         updateTable();
     }
 }
@@ -346,9 +336,9 @@ void TimerWindow::updateTable()
 
     QList<TimerData> timers;
     if (filter != "All timers")
-        timers = manager.getFilteredTimers(filter);
+        timers = manager->getFilteredTimers(filter);
     else
-        timers = manager.getTimers();
+        timers = manager->getTimers();
 
     ui->tableTimers->setRowCount(timers.size());
 
@@ -390,18 +380,11 @@ void TimerWindow::updateTable()
     }
     ui->comboGroups->clear();
     QStringList groups;
-    for (const auto &t : manager.getTimers()) {
+    for (const auto &t : manager->getTimers()) {
         if (!groups.contains(t.groupName))
             groups << t.groupName;
     }
     ui->comboGroups->addItems(groups);
-}
-
-QString TimerWindow::timersFilePath() const
-{
-    const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(base);
-    return base + "/timers.json";
 }
 
 QString TimerWindow::historyFilePath() const
@@ -456,19 +439,19 @@ void TimerWindow::closeEvent(QCloseEvent *event)
     settings.setValue("actionPath", actionPath);
 
     if (!continueAfterExit) {
-        QList<TimerData> timers = manager.getTimers();
+        QList<TimerData> timers = manager->getTimers();
         for (int i = 0; i < timers.size(); ++i) {
-            manager.pauseTimer(i);
+            manager->pauseTimer(i);
         }
     }
-    manager.saveToFile(timersFilePath());
+    emit saveRequested();
     saveHistoryJson();
     event->accept();
 }
 
 void TimerWindow::updateNextUpLabel()
 {
-    TimerData next = manager.getNextTimer();
+    TimerData next = manager->getNextTimer();
 
     if (!next.name.isEmpty()) {
         int hours = next.remaining / 3600;

@@ -13,6 +13,7 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QTime>
+#include <QApplication>
 
 MainWindow::MainWindow(QWidget *parent)
     : FramelessWindow(parent)
@@ -39,10 +40,14 @@ MainWindow::MainWindow(QWidget *parent)
     snapPreview = new SnapPreviewWindow(this);
     connect(this, &FramelessWindow::windowMaximizedChanged, this, &MainWindow::updateMaximizeIcon);
 
-    setupTrayIcon();
+    if (!qEnvironmentVariableIsSet("TEST_MODE")) {
+        setupTrayIcon();
+    }
 
     QSettings settings("SmartClock", "Theme");
     Theme saved = static_cast<Theme>(settings.value("theme", (int)Theme::Light).toInt());
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
+            qApp, &QApplication::setStyleSheet);
     ThemeManager::instance().applyTheme(saved);
     updateThemeIcon();
 }
@@ -192,7 +197,9 @@ void MainWindow::onTrayExit()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     hide();
-    trayIcon->showMessage("Smart Clock", "Application minimized to tray");
+    if (trayIcon) {
+        trayIcon->showMessage("Smart Clock", "Application minimized to tray");
+    }
     event->ignore();
 }
 

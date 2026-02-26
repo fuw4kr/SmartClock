@@ -26,6 +26,8 @@ protected:
     bool eventFilter(QObject *obj, QEvent *e) override;
 
 private:
+    void setHovered(bool hovered);
+
     Ui::AlarmItemWidget *ui;
     AlarmData alarm;
 };

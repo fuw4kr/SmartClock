@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QTime>
+#include "alarmrepeatmode.h"
 
 namespace Ui {
 class AlarmSettingsDialog;
@@ -18,7 +19,7 @@ public:
 
     QTime getTime() const;
     QString getLabel() const;
-    QString getRepeatMode() const;
+    RepeatMode getRepeatMode() const;
     QStringList getDays() const;
     QString getSoundPath() const;
     bool getSnooze() const;

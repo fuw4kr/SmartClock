@@ -1,11 +1,11 @@
 #include "timermanager.h"
-#include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include "jsontimerstorage.h"
+#include "itimerstorage.h"
+#include <utility>
 
-TimerManager::TimerManager(QObject *parent)
+TimerManager::TimerManager(QObject *parent, std::unique_ptr<ITimerStorage> storage)
     : QObject(parent)
+    , storage(storage ? std::move(storage) : std::make_unique<JsonTimerStorage>())
 {
     tickTimer = new QTimer(this);
     connect(tickTimer, &QTimer::timeout, this, &TimerManager::updateTimers);
@@ -107,74 +107,59 @@ QMap<QString, QString> TimerManager::getAllRecommendations() const
 
 void TimerManager::saveToFile(const QString &path)
 {
-    QJsonArray arr;
-    for (const auto &t : timers) {
-        QJsonObject o;
-        o["name"]        = t.name;
-        o["duration"]    = t.duration;
-        o["remaining"]   = t.remaining;
-        o["running"]     = t.running;
-        o["lastUpdated"] = t.lastUpdated.toString(Qt::ISODate);
-        o["type"]        = t.type;
-        o["groupName"]  = t.groupName;
-        arr.append(o);
-    }
-
-    QJsonArray deletedArr;
-    for (const auto &t : deletedTimers) {
-        QJsonObject o;
-        o["name"]        = t.name;
-        o["duration"]    = t.duration;
-        o["remaining"]   = t.remaining;
-        o["running"]     = t.running;
-        o["lastUpdated"] = t.lastUpdated.toString(Qt::ISODate);
-        o["type"]        = t.type;
-        o["groupName"]   = t.groupName;
-        deletedArr.append(o);
-    }
-
-    QJsonObject recObj;
-    for (auto it = recommendations.begin(); it != recommendations.end(); ++it)
-        recObj[it.key()] = it.value();
-
-    QJsonObject root;
-    root["timers"] = arr;
-    root["recommendations"] = recObj;
-    root["deletedTimers"] = deletedArr;
-
-    QJsonDocument doc(root);
-    QFile f(path);
-    if (!f.open(QIODevice::WriteOnly)) return;
-    f.write(doc.toJson(QJsonDocument::Compact));
-    f.close();
+    JsonTimerStorage storage(path);
+    TimerSnapshot snap;
+    snap.timers = timers;
+    snap.recommendations = recommendations;
+    snap.deletedTimers = deletedTimers;
+    storage.save(snap);
 }
 
 void TimerManager::loadFromFile(const QString &path)
 {
-    QFile f(path);
-    if (!f.exists() || !f.open(QIODevice::ReadOnly)) return;
-    const auto doc = QJsonDocument::fromJson(f.readAll());
-    f.close();
+    JsonTimerStorage storage(path);
+    TimerSnapshot snap;
+    if (!storage.load(snap))
+        return;
+    applySnapshot(snap);
+}
 
+bool TimerManager::save()
+{
+    if (!storage)
+        return false;
+    TimerSnapshot snap;
+    snap.timers = timers;
+    snap.recommendations = recommendations;
+    snap.deletedTimers = deletedTimers;
+    return storage->save(snap);
+}
+
+bool TimerManager::load()
+{
+    if (!storage)
+        return false;
+    TimerSnapshot snap;
+    if (!storage->load(snap))
+        return false;
+    applySnapshot(snap);
+    return true;
+}
+
+void TimerManager::setStorage(std::unique_ptr<ITimerStorage> storage)
+{
+    this->storage = std::move(storage);
+}
+
+void TimerManager::applySnapshot(const TimerSnapshot &snapshot)
+{
     timers.clear();
-    recommendations.clear();
+    recommendations = snapshot.recommendations;
+    deletedTimers.clear();
 
-    if (!doc.isObject()) return;
-    QJsonObject root = doc.object();
-
-    const QJsonArray arr = root["timers"].toArray();
     const QDateTime now = QDateTime::currentDateTime();
-    for (const auto &v : arr) {
-        const QJsonObject o = v.toObject();
-        TimerData t;
-        t.name        = o["name"].toString();
-        t.duration    = o["duration"].toInt();
-        t.remaining   = o["remaining"].toInt();
-        t.running     = o["running"].toBool();
-        t.lastUpdated = QDateTime::fromString(o["lastUpdated"].toString(), Qt::ISODate);
-        t.type        = o["type"].toString();
+    for (auto t : snapshot.timers) {
         if (t.type.isEmpty()) t.type = "Normal";
-        t.groupName = o["groupName"].toString();
         if (t.groupName.isEmpty()) t.groupName = "Default";
 
         if (t.running && t.lastUpdated.isValid()) {
@@ -197,25 +182,12 @@ void TimerManager::loadFromFile(const QString &path)
         }
         timers.append(t);
     }
-    const QJsonArray deletedArr = root["deletedTimers"].toArray();
-    for (const auto &v : deletedArr) {
-        const QJsonObject o = v.toObject();
-        TimerData t;
-        t.name        = o["name"].toString();
-        t.duration    = o["duration"].toInt();
-        t.remaining   = o["remaining"].toInt();
-        t.running     = o["running"].toBool();
-        t.lastUpdated = QDateTime::fromString(o["lastUpdated"].toString(), Qt::ISODate);
-        t.type        = o["type"].toString();
-        t.groupName   = o["groupName"].toString();
+
+    for (auto t : snapshot.deletedTimers) {
         if (t.groupName.isEmpty()) t.groupName = "Default";
         t.status = TimerStatus::Paused;
         deletedTimers.append(t);
     }
-
-    QJsonObject recObj = root["recommendations"].toObject();
-    for (auto it = recObj.begin(); it != recObj.end(); ++it)
-        recommendations[it.key()] = it.value().toString();
 
     emit timersUpdated();
 }

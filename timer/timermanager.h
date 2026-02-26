@@ -6,6 +6,8 @@
 #include <QList>
 #include <QDateTime>
 #include <QMap>
+#include <memory>
+#include "itimerstorage.h"
 
 enum class TimerStatus {
     Running,
@@ -29,7 +31,7 @@ class TimerManager : public QObject
     Q_OBJECT
 
 public:
-    explicit TimerManager(QObject *parent = nullptr);
+    explicit TimerManager(QObject *parent = nullptr, std::unique_ptr<ITimerStorage> storage = {});
 
     void addTimer(const QString &name, int durationSeconds, const QString &type = "Normal", const QString &group = "Default");
     void removeTimer(int index);
@@ -39,6 +41,9 @@ public:
     QList<TimerData> getTimers() const;
     void saveToFile(const QString &path);
     void loadFromFile(const QString &path);
+    bool save();
+    bool load();
+    void setStorage(std::unique_ptr<ITimerStorage> storage);
     void setTimers(const QList<TimerData> &list);
     QList<TimerData> getFilteredTimers(const QString &filterType) const;
 
@@ -70,12 +75,15 @@ private slots:
     void updateTimers();
 
 private:
+    void applySnapshot(const struct TimerSnapshot &snapshot);
+
     QList<TimerData> timers;
     QTimer *tickTimer;
 
     QMap<QString, QString> recommendations;
 
     QList<TimerData> deletedTimers;
+    std::unique_ptr<ITimerStorage> storage;
 
 };
 

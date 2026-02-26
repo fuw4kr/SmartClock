@@ -676,6 +676,11 @@ void FramelessDialog::showEventFade(QShowEvent *event)
 
 void FramelessDialog::closeEvent(QCloseEvent *event)
 {
+    if (windowOpacity() == 0.0) {
+        event->accept();
+        return;
+    }
+
     auto *fadeOut = new QPropertyAnimation(this, "windowOpacity");
     fadeOut->setDuration(180);
     fadeOut->setStartValue(1.0);
@@ -683,14 +688,13 @@ void FramelessDialog::closeEvent(QCloseEvent *event)
     fadeOut->setEasingCurve(QEasingCurve::InOutQuad);
 
     connect(fadeOut, &QPropertyAnimation::finished, this, [this, event]() {
+        this->hide();
         event->accept();
-        QDialog::close();
     });
 
     fadeOut->start(QAbstractAnimation::DeleteWhenStopped);
     event->ignore();
 }
-
 
 //=======================================================
 //                 FramelessMessageBox

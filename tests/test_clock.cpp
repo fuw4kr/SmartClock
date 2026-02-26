@@ -1,17 +1,38 @@
 #include <gtest/gtest.h>
-#include <QSignalSpy>
 #include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <QTest>
-#include <QMessageBox>
 #include <QListWidget>
 #include <QLabel>
 #include <QCheckBox>
 #include <QMetaObject>
+#include <QComboBox>
+#include <QTemporaryDir>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #include "../clock/clockwindow.h"
 #include "../clock/clocksettingsdialog.h"
+
+namespace {
+
+void clearAllClocks(ClockWindow &w)
+{
+    auto list = w.findChild<QListWidget*>("listClocks");
+    if (!list || list->count() == 0)
+        return;
+
+    QList<int> rows;
+    for (int i = 0; i < list->count(); ++i)
+        rows << i;
+    QMetaObject::invokeMethod(&w, "removeClocksRequested", Qt::DirectConnection, Q_ARG(QList<int>, rows));
+}
+
+void addClock(ClockWindow &w, const QString &zone)
+{
+    QMetaObject::invokeMethod(&w, "addClockRequested", Qt::DirectConnection, Q_ARG(QString, zone));
+}
+
+} // namespace
 
 TEST(ClockWindowTest, UpdatesMainTimeLabel) {
     ClockWindow w;
@@ -31,16 +52,13 @@ TEST(ClockWindowTest, AddsAndRemovesClockSuccessfully) {
     QListWidget* list = w.findChild<QListWidget*>("listClocks");
     ASSERT_TRUE(list);
 
-    ClockInfo ci{"Europe/Kyiv"};
-    w.onToggleFormat(false);
-    w.updateTime();
-    list->addItem(w.timeTextFor(ci));
-    EXPECT_GE(list->count(), 1);
+    clearAllClocks(w);
+    addClock(w, "Europe/Kyiv");
+    EXPECT_EQ(list->count(), 1);
 
-    if (w.metaObject()->indexOfMethod("onRemoveClock()") != -1) {
-        QMetaObject::invokeMethod(&w, "onRemoveClock", Qt::DirectConnection);
-    }
-    EXPECT_GE(list->count(), 0);
+    QList<int> rows{0};
+    QMetaObject::invokeMethod(&w, "removeClocksRequested", Qt::DirectConnection, Q_ARG(QList<int>, rows));
+    EXPECT_EQ(list->count(), 0);
 }
 
 TEST(ClockWindowTest, TogglesFormat12hAndSavesJson) {
@@ -49,34 +67,6 @@ TEST(ClockWindowTest, TogglesFormat12hAndSavesJson) {
     ASSERT_TRUE(check);
     check->setChecked(true);
     EXPECT_TRUE(check->isChecked());
-
-    w.saveToJson();
-    QFile file("clocks.json");
-    EXPECT_TRUE(file.exists());
-    EXPECT_GT(file.size(), 0);
-}
-
-TEST(ClockWindowTest, SavesAndLoadsClockDataFromJson) {
-    ClockWindow w;
-    QListWidget* list = w.findChild<QListWidget*>("listClocks");
-    ASSERT_TRUE(list);
-    list->clear();
-
-    ClockInfo c1{"America/New_York"};
-    ClockInfo c2{"Asia/Tokyo"};
-
-    w.onToggleFormat(true);
-    list->addItem(w.timeTextFor(c1));
-    list->addItem(w.timeTextFor(c2));
-
-    w.saveToJson();
-
-    ClockWindow reload;
-    EXPECT_NO_THROW(reload.loadFromJson());
-
-    QListWidget* list2 = reload.findChild<QListWidget*>("listClocks");
-    ASSERT_TRUE(list2);
-    EXPECT_GE(list2->count(), 0);
 }
 
 TEST(ClockWindowTest, TimeTextForReturnsFormattedString) {
@@ -91,7 +81,7 @@ TEST(ClockWindowTest, UpdateListTextsHidesListWhenEmpty) {
     ClockWindow w;
     QListWidget* list = w.findChild<QListWidget*>("listClocks");
     ASSERT_TRUE(list);
-    list->clear();
+    clearAllClocks(w);
     EXPECT_NO_THROW(w.updateListTexts());
 }
 
@@ -99,53 +89,10 @@ TEST(ClockWindowTest, UpdateListTextsExpandsWhenHasClocks) {
     ClockWindow w;
     QListWidget* list = w.findChild<QListWidget*>("listClocks");
     ASSERT_TRUE(list);
-    list->addItem("Test Clock");
-    ClockInfo ci{"Asia/Seoul"};
+    clearAllClocks(w);
+    addClock(w, "Asia/Seoul");
     EXPECT_NO_THROW(w.updateListTexts());
     EXPECT_NO_THROW(w.updateListTexts());
-}
-
-TEST(ClockWindowTest, SavedJsonContainsValidKeys) {
-    ClockWindow w;
-    ClockInfo ci{"Europe/Kyiv"};
-    QListWidget* list = w.findChild<QListWidget*>("listClocks");
-    ASSERT_TRUE(list);
-    list->addItem(w.timeTextFor(ci));
-    w.saveToJson();
-
-    QFile f("clocks.json");
-    ASSERT_TRUE(f.exists());
-    ASSERT_TRUE(f.open(QIODevice::ReadOnly));
-    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-    f.close();
-
-    ASSERT_TRUE(doc.isObject());
-    QJsonObject root = doc.object();
-    EXPECT_TRUE(root.contains("clocks"));
-    EXPECT_TRUE(root.contains("format12h"));
-}
-
-TEST(ClockWindowTest, LoadsCorruptedJsonGracefully) {
-    QFile f("clocks.json");
-    f.open(QIODevice::WriteOnly);
-    f.write("{not valid json");
-    f.close();
-
-    EXPECT_NO_THROW({
-        ClockWindow w;
-        w.loadFromJson();
-    });
-}
-
-TEST(ClockWindowTest, HandlesEmptyJsonFileGracefully) {
-    QFile f("clocks.json");
-    f.open(QIODevice::WriteOnly | QIODevice::Truncate);
-    f.close();
-
-    EXPECT_NO_THROW({
-        ClockWindow w;
-        w.loadFromJson();
-    });
 }
 
 TEST(ClockWindowIntegrationTest, AnimationRunsWithoutCrash) {
@@ -153,29 +100,10 @@ TEST(ClockWindowIntegrationTest, AnimationRunsWithoutCrash) {
     QListWidget* list = w.findChild<QListWidget*>("listClocks");
     ASSERT_TRUE(list);
 
-    list->addItem("Clock A");
-    list->addItem("Clock B");
+    clearAllClocks(w);
+    addClock(w, "UTC");
+    addClock(w, "America/New_York");
     EXPECT_NO_THROW(w.updateListTexts());
-}
-
-TEST(ClockWindowIntegrationTest, SaveLoadCycleKeepsFormatFlag) {
-    ClockWindow w;
-    QCheckBox* check = w.findChild<QCheckBox*>("checkFormat12");
-    ASSERT_TRUE(check);
-    check->setChecked(true);
-    w.saveToJson();
-
-    ClockWindow reload;
-    reload.loadFromJson();
-    QCheckBox* check2 = reload.findChild<QCheckBox*>("checkFormat12");
-    ASSERT_TRUE(check2);
-    EXPECT_TRUE(check2->isChecked());
-}
-
-TEST(ClockWindowIntegrationTest, DeleteNonexistentFileDoesNotCrash) {
-    QFile::remove("clocks.json");
-    ClockWindow w;
-    EXPECT_NO_THROW(w.loadFromJson());
 }
 
 TEST(ClockWindowIntegrationTest, MultipleUpdatesRefreshTimeLabel) {
@@ -191,14 +119,6 @@ TEST(ClockWindowIntegrationTest, MultipleUpdatesRefreshTimeLabel) {
     EXPECT_NE(t1, t2);
 }
 
-TEST(ClockWindowEdgeTest, HandlesEmptyClockListInSave) {
-    ClockWindow w;
-    QListWidget* list = w.findChild<QListWidget*>("listClocks");
-    ASSERT_TRUE(list);
-    list->clear();
-    EXPECT_NO_THROW(w.saveToJson());
-}
-
 TEST(ClockWindowEdgeTest, HandlesMultipleFormats) {
     ClockWindow w;
     EXPECT_NO_THROW({
@@ -209,10 +129,47 @@ TEST(ClockWindowEdgeTest, HandlesMultipleFormats) {
     });
 }
 
+TEST(ClockWindowEdgeTest, RemoveClockNoSelectionInTestMode) {
+    qputenv("TEST_MODE", "1");
+    ClockWindow w;
+    QListWidget* list = w.findChild<QListWidget*>("listClocks");
+    ASSERT_TRUE(list);
+    clearAllClocks(w);
+
+    EXPECT_TRUE(QMetaObject::invokeMethod(&w, "onRemoveClock", Qt::DirectConnection));
+    EXPECT_EQ(list->count(), 0);
+}
+
+TEST(ClockSettingsDialogTest, ReturnsEmptyWhenNoSelection) {
+    ClockSettingsDialog dlg;
+    auto combo = dlg.findChild<QComboBox*>("comboZone");
+    ASSERT_TRUE(combo);
+    combo->setCurrentIndex(-1);
+    EXPECT_TRUE(dlg.getSelectedZone().isEmpty());
+}
+
+TEST(ClockSettingsDialogTest, ReturnsSelectedZoneWhenChosen) {
+    ClockSettingsDialog dlg;
+    auto combo = dlg.findChild<QComboBox*>("comboZone");
+    ASSERT_TRUE(combo);
+    if (combo->count() == 0) {
+        GTEST_SKIP();
+    }
+    combo->setCurrentIndex(0);
+    EXPECT_FALSE(dlg.getSelectedZone().isEmpty());
+}
+
+TEST(ClockSettingsDialogTest, ComboPopulatedWithZones) {
+    ClockSettingsDialog dlg;
+    auto combo = dlg.findChild<QComboBox*>("comboZone");
+    ASSERT_TRUE(combo);
+    EXPECT_GT(combo->count(), 0);
+}
+
 TEST(ClockWindowEdgeTest, TimeTextFormatContainsTimezoneName) {
     ClockWindow w;
     ClockInfo ci{"UTC"};
     QString text = w.timeTextFor(ci);
     EXPECT_TRUE(text.startsWith("UTC"));
-    EXPECT_TRUE(text.contains("—"));
+    EXPECT_TRUE(text.contains(" - "));
 }

@@ -1,12 +1,5 @@
 #include "stopwatchwindow.h"
 #include "ui_stopwatchwindow.h"
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QStandardPaths>
-#include <QDir>
-#include <QFile>
-#include <QRegularExpression>
 #include <QSettings>
 #include <QStackedWidget>
 #include <QHBoxLayout>
@@ -15,10 +8,9 @@
 #include <QIcon>
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
-#include <QStackedWidget>
-
 #include <QStyledItemDelegate>
 #include <QPainter>
+#include <QDebug>
 
 namespace {
 enum { RoleLapFlag = Qt::UserRole + 100 };
@@ -76,6 +68,7 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::StopwatchWindow)
     , timer(new QTimer(this))
+    , model(new StopwatchModel(this))
 {
     ui->setupUi(this);
     setWindowTitle("Stopwatch");
@@ -84,7 +77,6 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
     ui->listLaps->setVisible(false);
     ui->labelTime->setText("00:00.00");
 
-    elapsed = QTime(0, 0);
     connect(timer, &QTimer::timeout, this, &StopwatchWindow::updateDisplay);
     connect(ui->btnStartStop, &QPushButton::clicked, this, &StopwatchWindow::onStartStopClicked);
     connect(ui->btnLap, &QPushButton::clicked, this, &StopwatchWindow::onLapClicked);
@@ -123,7 +115,7 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
     analogMode = settings.value("analogMode", false).toBool();
     stackedView->setCurrentIndex(analogMode ? 1 : 0);
     if (analogMode)
-        analogDial->setElapsed(elapsed);
+        analogDial->setElapsed(model->elapsedTime());
 
     QGraphicsOpacityEffect *fadeEffect = new QGraphicsOpacityEffect(this);
     stackedView->setGraphicsEffect(fadeEffect);
@@ -144,7 +136,7 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
         connect(fadeOut, &QPropertyAnimation::finished, this, [=]() mutable {
             stackedView->setCurrentIndex(analogMode ? 1 : 0);
             if (analogMode)
-                analogDial->setElapsed(elapsed);
+                analogDial->setElapsed(model->elapsedTime());
             fadeIn->start(QAbstractAnimation::DeleteWhenStopped);
         });
 
@@ -153,76 +145,64 @@ StopwatchWindow::StopwatchWindow(QWidget *parent)
         QSettings settings("SmartClockApp", "Stopwatch");
         settings.setValue("analogMode", analogMode);
     });
-    loadFromFile();
-    connect(qApp, &QCoreApplication::aboutToQuit, this, &StopwatchWindow::saveToFile);
-    ui->listLaps->setItemDelegate(new LapHighlightDelegate(ui->listLaps));
 
+    controller = new StopwatchController(model, this, this);
+    ui->listLaps->setItemDelegate(new LapHighlightDelegate(ui->listLaps));
 }
 
 StopwatchWindow::~StopwatchWindow()
 {
-    saveToFile();
     delete ui;
+}
+
+void StopwatchWindow::syncFromModel()
+{
+    ui->labelTime->setText(model->formattedElapsed());
+    if (analogMode)
+        analogDial->setElapsed(model->elapsedTime());
+
+    ui->listLaps->clear();
+    const QStringList texts = model->lapTexts();
+    for (const QString &text : texts)
+        ui->listLaps->insertItem(0, text);
+    ui->listLaps->setVisible(!texts.isEmpty());
+
+    const bool hasData = model->elapsedMs() > 0 || !model->lapDurations().isEmpty();
+    ui->btnLap->setEnabled(model->isRunning() || hasData);
+    ui->btnLap->setText(model->isRunning() ? "Lap" : (hasData ? "Reset" : "Lap"));
+    ui->btnStartStop->setText(model->isRunning() ? "Stop" : "Start");
+
+    if (model->isRunning()) {
+        if (!timer->isActive())
+            timer->start(10);
+    } else if (timer->isActive()) {
+        timer->stop();
+    }
+
+    updateLapColors();
 }
 
 void StopwatchWindow::onStartStopClicked()
 {
-    if (!running) {
-        timer->start(10);
-        running = true;
-        ui->btnStartStop->setText("Stop");
-        ui->btnLap->setEnabled(true);
-        ui->btnLap->setText("Lap");
-    } else {
-        timer->stop();
-        running = false;
-        ui->btnStartStop->setText("Start");
-        ui->btnLap->setText("Reset");
-    }
-    saveToFile();
+    emit startStopRequested();
 }
 
 void StopwatchWindow::updateDisplay()
 {
-    elapsed = elapsed.addMSecs(10);
-    ui->labelTime->setText(elapsed.toString("mm:ss.zzz").left(8));
+    model->tick(10);
+    ui->labelTime->setText(model->formattedElapsed());
     if (analogMode)
-        analogDial->setElapsed(elapsed);
+        analogDial->setElapsed(model->elapsedTime());
 }
 
 void StopwatchWindow::onLapClicked()
 {
-    if (running) {
-        const QTime nowLap = elapsed;
-
-        int segMs = 0;
-        if (!lapTimes.isEmpty())
-            segMs = lapTimes.last().msecsTo(nowLap);
-        else
-            segMs = elapsed.msecsSinceStartOfDay();
-
-        const QString lapTimeStr = nowLap.toString("mm:ss.zzz").left(8);
-        const QString deltaStr   = QTime(0, 0).addMSecs(segMs).toString("mm:ss.zzz").left(8);
-        const int lapNumber = lapTimes.size() + 1;
-        const QString text = QString("Lap %1: %2 (+%3)").arg(lapNumber).arg(lapTimeStr).arg(deltaStr);
-
-        lapTimes.append(nowLap);
-        lapDurations.append(segMs);
-        lapTexts.append(text);
-
-        ui->listLaps->insertItem(0, text);
-        ui->listLaps->setVisible(true);
-
-        updateLapColors();
-    } else {
-        resetStopwatch();
-    }
-
-    saveToFile();
+    emit lapRequested();
 }
 
 void StopwatchWindow::updateLapColors()
 {
+    const auto &lapDurations = model->lapDurations();
     if (lapDurations.isEmpty())
         return;
 
@@ -251,125 +231,17 @@ void StopwatchWindow::updateLapColors()
     ui->listLaps->viewport()->update();
 }
 
-void StopwatchWindow::resetStopwatch()
-{
-    timer->stop();
-    running = false;
-    elapsed = QTime(0, 0);
-    lapTimes.clear();
-    lapTexts.clear();
-    lapDurations.clear();
-
-    ui->labelTime->setText("00:00.00");
-    ui->listLaps->clear();
-    ui->listLaps->setVisible(false);
-
-    ui->btnStartStop->setText("Start");
-    ui->btnLap->setText("Lap");
-    ui->btnLap->setEnabled(false);
-
-    saveToFile();
-}
-
-QString StopwatchWindow::filePath() const
-{
-    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(base);
-    return base + "/stopwatch.json";
-}
-
-void StopwatchWindow::saveToFile() const
-{
-    QJsonObject obj;
-    obj["elapsed_ms"] = elapsed.msecsSinceStartOfDay();
-    obj["running"] = running;
-
-    if (!running && elapsed == QTime(0, 0)) {
-        QFile f(filePath());
-        f.remove();
-        return;
-    }
-
-    QJsonArray lapsArr;
-    for (const QString &s : lapTexts)
-        lapsArr.append(s);
-    obj["laps"] = lapsArr;
-
-    QJsonArray durArr;
-    for (int d : lapDurations)
-        durArr.append(d);
-    obj["durations"] = durArr;
-
-    QFile f(filePath());
-    if (f.open(QIODevice::WriteOnly)) {
-        f.write(QJsonDocument(obj).toJson(QJsonDocument::Compact));
-        f.close();
-    }
-}
-
-void StopwatchWindow::loadFromFile()
-{
-    QFile f(filePath());
-    if (!f.exists() || !f.open(QIODevice::ReadOnly))
-        return;
-
-    QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-    f.close();
-
-    if (!doc.isObject())
-        return;
-
-    QJsonObject obj = doc.object();
-    int ms = obj["elapsed_ms"].toInt(0);
-    running = obj["running"].toBool(false);
-    elapsed = QTime(0, 0).addMSecs(ms);
-    ui->labelTime->setText(elapsed.toString("mm:ss.zzz").left(8));
-
-    lapTexts.clear();
-    lapTimes.clear();
-    lapDurations.clear();
-    ui->listLaps->clear();
-
-    QJsonArray lapsArr = obj["laps"].toArray();
-    QJsonArray durArr = obj["durations"].toArray();
-
-    for (int i = 0; i < lapsArr.size(); ++i) {
-        QString text = lapsArr[i].toString();
-        ui->listLaps->insertItem(0, text);
-        lapTexts.append(text);
-        if (i < durArr.size()) lapDurations.append(durArr[i].toInt());
-    }
-
-    lapTimes.clear();
-    int accMs = 0;
-    for (int d : lapDurations) {
-        accMs += d;
-        lapTimes.append(QTime(0, 0).addMSecs(accMs));
-    }
-
-    if (!lapTexts.isEmpty())
-        ui->listLaps->setVisible(true);
-
-    ui->btnLap->setEnabled(running || !lapTexts.isEmpty());
-    ui->btnLap->setText(running ? "Lap" : "Reset");
-    ui->btnStartStop->setText(running ? "Stop" : "Start");
-
-    if (running)
-        timer->start(10);
-
-    updateLapColors();
-}
-
 QString StopwatchWindow::getCurrentLapTimeString() const
 {
+    const auto &lapDurations = model->lapDurations();
     if (!lapDurations.isEmpty()) {
         const int segMs = lapDurations.last();
         return QTime(0,0).addMSecs(segMs).toString("mm:ss.zzz").left(8);
     }
-    return "—";
+    return "-";
 }
 
 QString StopwatchWindow::getTotalTimeString() const
 {
-    return ui && ui->labelTime ? ui->labelTime->text() : "—";
+    return ui && ui->labelTime ? ui->labelTime->text() : "-";
 }

@@ -38,21 +38,33 @@ QString AlarmSettingsDialog::getLabel() const
     return text.isEmpty() ? "Alarm" : text;
 }
 
-QString AlarmSettingsDialog::getRepeatMode() const
+RepeatMode AlarmSettingsDialog::getRepeatMode() const
 {
-    return ui->comboRepeat->currentText();
+    return repeatModeFromString(ui->comboRepeat->currentText());
 }
 
 QStringList AlarmSettingsDialog::getDays() const
 {
+    struct DayCheck {
+        QCheckBox *box;
+        const char *label;
+    };
+
+    const DayCheck items[] = {
+        {ui->chkMon, "Mon"},
+        {ui->chkTue, "Tue"},
+        {ui->chkWed, "Wed"},
+        {ui->chkThu, "Thu"},
+        {ui->chkFri, "Fri"},
+        {ui->chkSat, "Sat"},
+        {ui->chkSun, "Sun"},
+    };
+
     QStringList days;
-    if (ui->chkMon->isChecked()) days << "Mon";
-    if (ui->chkTue->isChecked()) days << "Tue";
-    if (ui->chkWed->isChecked()) days << "Wed";
-    if (ui->chkThu->isChecked()) days << "Thu";
-    if (ui->chkFri->isChecked()) days << "Fri";
-    if (ui->chkSat->isChecked()) days << "Sat";
-    if (ui->chkSun->isChecked()) days << "Sun";
+    for (const auto &item : items) {
+        if (item.box->isChecked())
+            days << item.label;
+    }
     return days;
 }
 
@@ -83,5 +95,5 @@ void AlarmSettingsDialog::onBrowseSound()
 
 void AlarmSettingsDialog::onRepeatChanged(const QString &text)
 {
-    ui->groupDays->setVisible(text == "Specific Days");
+    ui->groupDays->setVisible(repeatModeFromString(text) == RepeatMode::SpecificDays);
 }

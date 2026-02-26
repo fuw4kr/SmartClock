@@ -26,26 +26,26 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    int getRunningTimers() const;
+    int getFinishedTimers() const;
+    QString getNextAlarmTime() const;
+    QString getStopwatchLapTime() const;
+    QString getStopwatchTotalTime() const;
+
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private:
     Ui::MainWindow *ui;
 
-    QSystemTrayIcon *trayIcon;
-    QMenu *trayMenu;
+    QSystemTrayIcon *trayIcon = nullptr;
+    QMenu *trayMenu = nullptr;
     void setupTrayIcon();
 
     ClockWindow *clockWindow;
     AlarmWindow *alarmWindow;
     StopwatchWindow *stopwatchWindow;
     TimerWindow *timerWindow;
-
-    int getRunningTimers() const;
-    int getFinishedTimers() const;
-    QString getNextAlarmTime() const;
-    QString getStopwatchLapTime() const;
-    QString getStopwatchTotalTime() const;
 
     void setupTitleBar();
     void updateMaximizeIcon(bool maxed);

@@ -17,10 +17,30 @@ endif()
 # ======================================================
 # === SOURCE FILES
 # ======================================================
-set(SMARTCLOCK_SOURCES
+set(SMARTCLOCK_LOGIC_SOURCES
+        timer/timermanager.cpp timer/timermanager.h
+        timer/itimerstorage.h
+        timer/jsontimerstorage.cpp timer/jsontimerstorage.h
+        alarm/alarmmanager.cpp alarm/alarmmanager.h
+        alarm/alarmrepeatmode.h
+        alarm/ialarmstorage.h
+        alarm/jsonalarmstorage.cpp alarm/jsonalarmstorage.h
+        clock/clockmodel.cpp clock/clockmodel.h
+        clock/iclockstorage.h
+        clock/jsonclockstorage.cpp clock/jsonclockstorage.h
+        stopwatch/stopwatchmodel.cpp stopwatch/stopwatchmodel.h
+        stopwatch/istopwatchstorage.h
+        stopwatch/jsonstopwatchstorage.cpp stopwatch/jsonstopwatchstorage.h
+)
+
+set(SMARTCLOCK_UI_SOURCES
         mainwindow.cpp mainwindow.h mainwindow.ui
 
-        timer/timermanager.cpp timer/timermanager.h
+        controllers/alarmcontroller.cpp controllers/alarmcontroller.h
+        controllers/timercontroller.cpp controllers/timercontroller.h
+        controllers/clockcontroller.cpp controllers/clockcontroller.h
+        controllers/stopwatchcontroller.cpp controllers/stopwatchcontroller.h
+
         timer/timerwindow.cpp timer/timerwindow.h timer/timerwindow.ui
         timer/timereditdialog.cpp timer/timereditdialog.h timer/timereditdialog.ui
         timer/settingstimerdialog.cpp timer/settingstimerdialog.h timer/settingstimerdialog.ui
@@ -30,9 +50,11 @@ set(SMARTCLOCK_SOURCES
         clock/clocksettingsdialog.cpp clock/clocksettingsdialog.h clock/clocksettingsdialog.ui
 
         alarm/alarmwindow.cpp alarm/alarmwindow.h alarm/alarmwindow.ui
-        alarm/alarmmanager.cpp alarm/alarmmanager.h
         alarm/alarmsettingsdialog.cpp alarm/alarmsettingsdialog.h alarm/alarmsettingsdialog.ui
         alarm/alarmitemwidget.cpp alarm/alarmitemwidget.h alarm/alarmitemwidget.ui
+        alarm/alarmfactory.h
+        alarm/ialarmaction.h
+        alarm/soundalarmaction.cpp alarm/soundalarmaction.h
 
         stopwatch/stopwatchwindow.cpp stopwatch/stopwatchwindow.h stopwatch/stopwatchwindow.ui
         stopwatch/analogstopwatchdial.cpp stopwatch/analogstopwatchdial.h
@@ -49,15 +71,30 @@ set(SMARTCLOCK_SOURCES
 qt_add_resources(SMARTCLOCK_RESOURCES resources.qrc)
 
 # ======================================================
-# === MAIN LIBRARY (core logic shared between app & tests)
+# === LOGIC LIBRARY (no UI dependencies)
+# ======================================================
+add_library(SmartClockLogic STATIC
+        ${SMARTCLOCK_LOGIC_SOURCES}
+)
+
+target_link_libraries(SmartClockLogic
+        PUBLIC
+        Qt6::Core
+        Qt6::Multimedia
+)
+target_include_directories(SmartClockLogic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# ======================================================
+# === UI LIBRARY
 # ======================================================
 add_library(SmartClockLib STATIC
-        ${SMARTCLOCK_SOURCES}
+        ${SMARTCLOCK_UI_SOURCES}
         ${SMARTCLOCK_RESOURCES}
 )
 
 target_link_libraries(SmartClockLib
         PUBLIC
+        SmartClockLogic
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
@@ -77,6 +114,7 @@ qt_add_executable(SmartClock
 target_link_libraries(SmartClock
         PRIVATE
         SmartClockLib
+        SmartClockLogic
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets

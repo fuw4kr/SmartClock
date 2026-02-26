@@ -50,6 +50,8 @@ jobs:
 
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure
+        env:
+          TEST_MODE: 1
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

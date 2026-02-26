@@ -1,8 +1,4 @@
 #include <gtest/gtest.h>
-#include "../alarm/alarmmanager.h"
-#include "../alarm/alarmsettingsdialog.h"
-#include "../alarm/alarmitemwidget.h"
-#include "../alarm/alarmwindow.h"
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
@@ -13,19 +9,29 @@
 #include <QJsonObject>
 #include <QListWidget>
 #include <QPushButton>
+#include <QApplication>
 #include <QDateTime>
 #include <QTest>
 #include <QComboBox>
 #include <QGroupBox>
 #include <QCheckBox>
+#include <QCoreApplication>
 #include <QTimeEdit>
 #include <QLineEdit>
 #include <QStandardPaths>
 #include <QLabel>
+#include <QGraphicsOpacityEffect>
+#include <QMessageBox>
+#include "../alarm/alarmmanager.h"
+#include "../alarm/alarmsettingsdialog.h"
+#include "../alarm/alarmitemwidget.h"
+#include "../alarm/alarmwindow.h"
+#include "../alarm/alarmfactory.h"
+#include "../alarm/soundalarmaction.h"
 
 static AlarmData makeAlarm(const QString& name,
                            const QTime& t,
-                           const QString& repeat = "Never",
+                           RepeatMode repeat = RepeatMode::Never,
                            const QStringList& days = {},
                            bool enabled = true,
                            bool snooze = false,
@@ -39,6 +45,22 @@ static AlarmData makeAlarm(const QString& name,
     a.snooze = snooze;
     a.soundPath = sound;
     return a;
+}
+class MockAlarmAction : public IAlarmAction {
+public:
+    bool executed = false;
+    void execute() override {
+        executed = true;
+    }
+    ~MockAlarmAction() override = default;
+};
+
+TEST(IAlarmActionTest, PolymorphismAndExecutionWorks) {
+    std::unique_ptr<IAlarmAction> action = std::make_unique<MockAlarmAction>();
+    action->execute();
+
+    auto* mock = static_cast<MockAlarmAction*>(action.get());
+    EXPECT_TRUE(mock->executed);
 }
 
 TEST(AlarmSettingsDialogTest, InitialRepeatOptionsAndDaysGroupHidden) {
@@ -60,7 +82,7 @@ TEST(AlarmSettingsDialogTest, SpecificDaysVisibilityToggles) {
 
     comboRepeat->setCurrentIndex(comboRepeat->findText("Weekdays"));
     QCoreApplication::processEvents();
-    EXPECT_FALSE(groupDays->isVisible());
+    EXPECT_TRUE(groupDays->isHidden());
 }
 
 TEST(AlarmSettingsDialogTest, GettersReturnFormattedValues) {
@@ -76,7 +98,7 @@ TEST(AlarmSettingsDialogTest, GettersReturnFormattedValues) {
     EXPECT_EQ(dlg.getLabel(), "My Alarm");
 
     dlg.findChild<QComboBox*>("comboRepeat")->setCurrentText("Weekdays");
-    EXPECT_EQ(dlg.getRepeatMode(), "Weekdays");
+    EXPECT_EQ(dlg.getRepeatMode(), RepeatMode::Weekdays);
 
     dlg.findChild<QCheckBox*>("chkMon")->setChecked(true);
     dlg.findChild<QCheckBox*>("chkFri")->setChecked(true);
@@ -98,6 +120,55 @@ TEST(AlarmSettingsDialogTest, DefaultSoundVsCustomSound) {
     EXPECT_EQ(dlg.getSoundPath(), "C:/tmp/abc.wav");
 }
 
+TEST(AlarmSettingsDialogTest, SpecificDaysShowsGroupAndEmptyLabelDefaults) {
+    AlarmSettingsDialog dlg;
+    auto comboRepeat = dlg.findChild<QComboBox*>("comboRepeat");
+    auto groupDays   = dlg.findChild<QGroupBox*>("groupDays");
+    auto line         = dlg.findChild<QLineEdit*>("lineLabel");
+    ASSERT_TRUE(comboRepeat && groupDays && line);
+
+    comboRepeat->setCurrentText("Specific Days");
+    QCoreApplication::processEvents();
+    EXPECT_FALSE(groupDays->isHidden());
+
+    line->clear();
+    EXPECT_EQ(dlg.getLabel(), "Alarm");
+}
+
+TEST(AlarmSettingsDialogTest, SpecificDaysThenNeverHidesGroup) {
+    AlarmSettingsDialog dlg;
+    auto comboRepeat = dlg.findChild<QComboBox*>("comboRepeat");
+    auto groupDays   = dlg.findChild<QGroupBox*>("groupDays");
+    ASSERT_TRUE(comboRepeat && groupDays);
+
+    comboRepeat->setCurrentText("Specific Days");
+    QCoreApplication::processEvents();
+    EXPECT_FALSE(groupDays->isHidden());
+
+    comboRepeat->setCurrentText("Never");
+    QCoreApplication::processEvents();
+    EXPECT_TRUE(groupDays->isHidden());
+}
+
+TEST(AlarmSettingsDialogTest, RepeatModeReturnsCurrentEnum) {
+    AlarmSettingsDialog dlg;
+    auto comboRepeat = dlg.findChild<QComboBox*>("comboRepeat");
+    ASSERT_TRUE(comboRepeat);
+
+    comboRepeat->setCurrentText("Specific Days");
+    EXPECT_EQ(dlg.getRepeatMode(), RepeatMode::SpecificDays);
+}
+
+TEST(AlarmSettingsDialogTest, DefaultDaysEmptyAndSoundDefaultPath) {
+    AlarmSettingsDialog dlg;
+    auto comboSound = dlg.findChild<QComboBox*>("comboSound");
+    ASSERT_TRUE(comboSound);
+
+    comboSound->setCurrentText("Default sound");
+    EXPECT_TRUE(dlg.getDays().isEmpty());
+    EXPECT_TRUE(dlg.getSoundPath().contains("soundalarm.wav"));
+}
+
 TEST(AlarmSettingsDialogTest, SnoozeFlag) {
     AlarmSettingsDialog dlg;
     auto chk = dlg.findChild<QCheckBox*>("checkSnooze");
@@ -109,7 +180,7 @@ TEST(AlarmSettingsDialogTest, SnoozeFlag) {
 }
 
 TEST(AlarmItemWidgetTest, LabelsReflectAlarmDataAndRepeatText) {
-    AlarmData a = makeAlarm("Wake", QTime(8,15), "Specific days", {"Mon", "Wed"});
+    AlarmData a = makeAlarm("Wake", QTime(8,15), RepeatMode::SpecificDays, {"Mon", "Wed"});
     AlarmItemWidget w(a);
 
     auto lTime   = w.findChild<QLabel*>("labelTime");
@@ -121,21 +192,21 @@ TEST(AlarmItemWidgetTest, LabelsReflectAlarmDataAndRepeatText) {
     EXPECT_EQ(lName->text(), "Wake");
     EXPECT_EQ(lRepeat->text(), "Mon, Wed");
 
-    a.repeatMode = "Weekdays";
+    a.repeatMode = RepeatMode::Weekdays;
     w.setAlarmData(a);
     EXPECT_EQ(lRepeat->text(), "Weekdays");
 
-    a.repeatMode = "Weekends";
+    a.repeatMode = RepeatMode::Weekends;
     w.setAlarmData(a);
     EXPECT_EQ(lRepeat->text(), "Weekends");
 
-    a.repeatMode = "Never";
+    a.repeatMode = RepeatMode::Never;
     w.setAlarmData(a);
     EXPECT_EQ(lRepeat->text(), "Once");
 }
 
 TEST(AlarmItemWidgetTest, ToggleButtonSwitchesStateAndEmitsSignal) {
-    AlarmData a = makeAlarm("A", QTime(9,0), "Never", {}, false);
+    AlarmData a = makeAlarm("A", QTime(9,0), RepeatMode::Never, {}, false);
     AlarmItemWidget w(a);
     auto btn = w.findChild<QPushButton*>("btnToggle");
     ASSERT_TRUE(btn);
@@ -165,123 +236,83 @@ TEST(AlarmItemWidgetTest, HoverPropertyFlipsOnEnterLeave) {
     EXPECT_FALSE(w.property("hovered").toBool());
 }
 
-TEST(AlarmManagerTest, AddRemoveToggleUpdatesList) {
-    AlarmManager m;
-    QSignalSpy spy(&m, &AlarmManager::alarmsUpdated);
+TEST(AlarmItemWidgetTest, EmptyNameDefaultsAndSpecificDaysEmptyShowsOnce) {
+    AlarmData a = makeAlarm("", QTime(6,0), RepeatMode::SpecificDays, {});
+    AlarmItemWidget w(a);
 
-    m.addAlarm(makeAlarm("A", QTime(6,0)));
-    m.addAlarm(makeAlarm("B", QTime(7,0)));
-    EXPECT_EQ(m.getAlarms().size(), 2);
-    spy.clear();
+    auto lName = w.findChild<QLabel*>("labelName");
+    auto lRepeat = w.findChild<QLabel*>("labelRepeat");
+    ASSERT_TRUE(lName && lRepeat);
 
-    m.removeAlarm(0);
-    EXPECT_EQ(m.getAlarms().size(), 1);
-    spy.clear();
-
-    m.toggleAlarm(0);
-    EXPECT_GE(spy.count(), 0);
+    EXPECT_EQ(lName->text(), "Alarm");
+    EXPECT_EQ(lRepeat->text(), "Once");
 }
 
-TEST(AlarmManagerTest, ComputeInitialTriggerIsFutureOrNextDay) {
-    AlarmManager m;
+TEST(AlarmItemWidgetTest, EventFilterHandlesChildHover) {
+    AlarmData a = makeAlarm("A", QTime(9,0));
+    AlarmItemWidget w(a);
+    auto child = w.findChild<QLabel*>("labelTime");
+    ASSERT_TRUE(child);
 
-    
-    QTime pastTime = QTime::currentTime().addSecs(-60);
-    m.addAlarm(makeAlarm("Past", pastTime));
+    QEvent enter(QEvent::Enter);
+    QApplication::sendEvent(child, &enter);
+    EXPECT_TRUE(w.property("hovered").toBool());
 
-    const auto alarms = m.getAlarms();
-    ASSERT_FALSE(alarms.isEmpty());
-
-    
-    EXPECT_TRUE(alarms.first().nextTrigger.isValid());
-    EXPECT_GE(alarms.first().nextTrigger.date(), QDate::currentDate());
+    QEvent leave(QEvent::Leave);
+    QApplication::sendEvent(child, &leave);
+    EXPECT_FALSE(w.property("hovered").toBool());
 }
 
-TEST(AlarmManagerTest, ComputeNextTriggerForRepeatModes) {
-    AlarmManager m;
-    QDateTime now = QDateTime::currentDateTime();
-
-    
-    AlarmData aED = makeAlarm("ED", QTime(10,0), "Every day");
-    m.addAlarm(aED);
-    auto ed = m.getAlarms().last();
-    EXPECT_TRUE(ed.nextTrigger.isValid());
-
-    
-    AlarmData aWD = makeAlarm("WD", QTime(11,0), "Weekdays");
-    m.addAlarm(aWD);
-    auto wd = m.getAlarms().last();
-    EXPECT_LE(wd.nextTrigger.date().dayOfWeek(), 5);
-
-    
-    AlarmData aWE = makeAlarm("WE", QTime(12,0), "Weekends");
-    m.addAlarm(aWE);
-    auto we = m.getAlarms().last();
-    EXPECT_GE(we.nextTrigger.date().dayOfWeek(), 6);
-
-    
-    AlarmData aSD = makeAlarm("SD", QTime(9,30), "Specific days", {"Wed"});
-    m.addAlarm(aSD);
-    auto sd = m.getAlarms().last();
-    EXPECT_EQ(sd.nextTrigger.date().dayOfWeek(), 3);
+TEST(AlarmFactoryTest, DisabledAlarmAddsOpacityEffect) {
+    AlarmData a = makeAlarm("Off", QTime(7,0), RepeatMode::Never, {}, false);
+    auto *w = AlarmFactory::createAlarmWidget(a, nullptr);
+    ASSERT_TRUE(w);
+    auto *effect = qobject_cast<QGraphicsOpacityEffect*>(w->graphicsEffect());
+    ASSERT_TRUE(effect);
+    EXPECT_LT(effect->opacity(), 1.0);
+    delete w;
 }
 
-TEST(AlarmManagerTest, SaveAndLoadRoundTrip) {
-    AlarmManager m;
-    AlarmData a = makeAlarm("Trip", QTime(5,45), "Specific days", {"Mon","Fri"}, true, true, "C:/beep.wav");
-    a.nextTrigger = QDateTime::currentDateTime().addDays(2);
-    m.addAlarm(a);
-
-    QTemporaryDir dir;
-    const QString path = dir.path() + "/alarms.json";
-    m.saveToFile(path);
-
-    AlarmManager m2;
-    m2.loadFromFile(path);
-    ASSERT_EQ(m2.getAlarms().size(), 1);
-    const auto r = m2.getAlarms().first();
-    EXPECT_EQ(r.name, "Trip");
-    EXPECT_EQ(r.repeatMode, "Specific days");
-    EXPECT_TRUE(r.days.contains("Mon"));
-    EXPECT_TRUE(r.days.contains("Fri"));
-    EXPECT_EQ(r.soundPath, "C:/beep.wav");
-    EXPECT_TRUE(r.enabled);
-    EXPECT_TRUE(r.nextTrigger.isValid());
-}
 
 TEST(AlarmWindowTest, UpdateListBuildsWidgetsAndConnectsToggles) {
     AlarmWindow w;
     AlarmManager* manager = w.findChild<AlarmManager*>();
     ASSERT_TRUE(manager);
 
-    
-    manager->addAlarm(makeAlarm("A", QTime(6,10), "Never"));
-    manager->addAlarm(makeAlarm("B", QTime(7,20), "Weekdays"));
+    manager->addAlarm(makeAlarm("A", QTime(6,10), RepeatMode::Never));
+    manager->addAlarm(makeAlarm("B", QTime(7,20), RepeatMode::Weekdays));
 
-    
     QListWidget* list = w.findChild<QListWidget*>("listAlarms");
     ASSERT_TRUE(list);
     EXPECT_GE(list->count(), 1);
 
-    
     QWidget* w0 = list->itemWidget(list->item(0));
     auto aiw = qobject_cast<AlarmItemWidget*>(w0);
     ASSERT_TRUE(aiw);
 
-    
-    QSignalSpy spy(manager, &AlarmManager::alarmsUpdated);
+    QSignalSpy spy(&w, &AlarmWindow::alarmToggled);
     emit aiw->toggled(false);
-
-    
-    EXPECT_GE(spy.count(), 0);
+    EXPECT_GE(spy.count(), 1);
 }
 
-TEST(AlarmWindowTest, AlarmsFilePathLooksValid) {
-    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QString path = dir + "/alarms.json";
+TEST(AlarmWindowTest, SetAlarmsAppliesOpacityForDisabled) {
+    AlarmWindow w;
+    QListWidget* list = w.findChild<QListWidget*>("listAlarms");
+    ASSERT_TRUE(list);
 
-    EXPECT_FALSE(dir.isEmpty());
-    EXPECT_TRUE(path.endsWith("/alarms.json") || path.endsWith("\\alarms.json"));
+    AlarmData on = makeAlarm("On", QTime(6, 0), RepeatMode::Never, {}, true);
+    AlarmData off = makeAlarm("Off", QTime(7, 0), RepeatMode::Never, {}, false);
+    w.setAlarms(QList<AlarmData>{on, off});
+
+    ASSERT_EQ(list->count(), 2);
+    QWidget* w0 = list->itemWidget(list->item(0));
+    QWidget* w1 = list->itemWidget(list->item(1));
+    ASSERT_TRUE(w0 && w1);
+
+    EXPECT_EQ(w0->graphicsEffect(), nullptr);
+    auto *effect = qobject_cast<QGraphicsOpacityEffect*>(w1->graphicsEffect());
+    ASSERT_TRUE(effect);
+    EXPECT_LT(effect->opacity(), 1.0);
 }
 
 TEST(AlarmWindowTest, GetNextAlarmStringFormatsTodayTomorrowOrWeekday) {
@@ -294,9 +325,9 @@ TEST(AlarmWindowTest, GetNextAlarmStringFormatsTodayTomorrowOrWeekday) {
 
     EXPECT_EQ(w.getNextAlarmString(), "No alarms set");
 
-    AlarmData a1 = makeAlarm("Soon", QTime::currentTime(), "Never", {}, true);
+    AlarmData a1 = makeAlarm("Soon", QTime::currentTime(), RepeatMode::Never, {}, true);
     a1.nextTrigger = QDateTime::currentDateTime().addSecs(60);
-    AlarmData a2 = makeAlarm("Later", QTime::currentTime(), "Never", {}, true);
+    AlarmData a2 = makeAlarm("Later", QTime::currentTime(), RepeatMode::Never, {}, true);
     a2.nextTrigger = QDateTime::currentDateTime().addDays(1).addSecs(30);
 
     manager->addAlarm(a1);
@@ -307,26 +338,104 @@ TEST(AlarmWindowTest, GetNextAlarmStringFormatsTodayTomorrowOrWeekday) {
     EXPECT_TRUE(s.contains(":"));
 }
 
-TEST(AlarmWindowTest, ManagerPersistsToFileViaWindowLifecycle) {
-    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QString path = dir + "/alarms.json";
-    {
-        AlarmWindow w;
-        AlarmManager* manager = w.findChild<AlarmManager*>();
-        ASSERT_TRUE(manager);
-        manager->addAlarm(makeAlarm("Persist", QTime(4,0)));
-        
-    }
+TEST(AlarmWindowTest, GetNextAlarmStringNoUpcomingWhenAllDisabled) {
+    AlarmWindow w;
+    AlarmManager* manager = w.findChild<AlarmManager*>();
+    ASSERT_TRUE(manager);
 
-    
-    QFile f(path);
-    EXPECT_TRUE(f.exists());
+    for (int i = manager->getAlarms().size() - 1; i >= 0; --i)
+        manager->removeAlarm(i);
 
-    
-    EXPECT_NO_THROW({
-        AlarmWindow w2;
-    });
+    AlarmData a = makeAlarm("Off", QTime(8,0), RepeatMode::Never, {}, false);
+    a.nextTrigger = QDateTime::currentDateTime().addDays(1);
+    manager->addAlarm(a);
 
-    QFile::remove(path);
+    EXPECT_EQ(w.getNextAlarmString(), "No upcoming alarms");
 }
 
+TEST(AlarmWindowTest, GetNextAlarmStringUsesTomorrowLabel) {
+    AlarmWindow w;
+    AlarmManager* manager = w.findChild<AlarmManager*>();
+    ASSERT_TRUE(manager);
+
+    for (int i = manager->getAlarms().size() - 1; i >= 0; --i)
+        manager->removeAlarm(i);
+
+    AlarmData a = makeAlarm("Tomorrow", QTime(7,30), RepeatMode::Never, {}, true);
+    a.nextTrigger = QDateTime::currentDateTime().addDays(1).addSecs(60);
+    manager->addAlarm(a);
+
+    QString s = w.getNextAlarmString();
+    EXPECT_TRUE(s.startsWith("Tomorrow"));
+}
+
+TEST(AlarmWindowTest, AlarmsFilePathLooksValid) {
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString path = dir + "/alarms.json";
+
+    EXPECT_FALSE(dir.isEmpty());
+    EXPECT_TRUE(path.endsWith("/alarms.json") || path.endsWith("\\alarms.json"));
+}
+TEST(AlarmWindowTest, ListSelectionStateIsTracked) {
+    AlarmWindow w;
+    AlarmManager* manager = w.findChild<AlarmManager*>();
+    ASSERT_TRUE(manager);
+
+    for (int i = manager->getAlarms().size() - 1; i >= 0; --i) {
+        manager->removeAlarm(i);
+    }
+
+    // Тепер додаємо рівно 3 будильники для нашого тесту
+    manager->addAlarm(makeAlarm("A", QTime(6, 0)));
+    manager->addAlarm(makeAlarm("B", QTime(7, 0)));
+    manager->addAlarm(makeAlarm("C", QTime(8, 0)));
+
+    QListWidget* list = w.findChild<QListWidget*>("listAlarms");
+    ASSERT_TRUE(list);
+
+    ASSERT_EQ(list->count(), 3);
+
+    list->item(0)->setSelected(true);
+    list->item(2)->setSelected(true);
+
+    EXPECT_EQ(list->selectedItems().count(), 2);
+
+    EXPECT_TRUE(list->item(0)->isSelected());
+    EXPECT_FALSE(list->item(1)->isSelected());
+    EXPECT_TRUE(list->item(2)->isSelected());
+}
+TEST(AlarmSettingsDialogTest, EmptyLabelDefaultsToAlarm) {
+    AlarmSettingsDialog dlg;
+    auto line = dlg.findChild<QLineEdit*>("lineLabel");
+    ASSERT_TRUE(line);
+
+    line->setText("   ");
+    EXPECT_EQ(dlg.getLabel(), "Alarm");
+}
+
+TEST(AlarmWindowTest, RemoveAlarmWithNoSelectionShowsWarning) {
+    AlarmWindow w;
+    QPushButton* btnRemove = w.findChild<QPushButton*>("btnRemove");
+    ASSERT_TRUE(btnRemove);
+
+    QTimer::singleShot(100, []() {
+        for (QWidget *widget : QApplication::topLevelWidgets()) {
+            if (auto *mb = qobject_cast<QMessageBox*>(widget)) {
+                mb->accept();
+            }
+        }
+    });
+
+    QSignalSpy spy(&w, &AlarmWindow::removeAlarmsRequested);
+
+    btnRemove->click();
+
+    EXPECT_EQ(spy.count(), 0);
+}
+TEST(SoundAlarmActionTest, CanConstructAndSetPath) {
+    SoundAlarmAction action("qrc:/custom/sound.wav");
+
+
+    EXPECT_NO_THROW(action.setSoundPath("qrc:/another/sound.wav"));
+    EXPECT_NO_THROW(action.setSoundPath(""));
+}

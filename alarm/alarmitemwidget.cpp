@@ -5,6 +5,19 @@
 #include <QEvent>
 #include <QStyle>
 
+namespace {
+QString repeatTextFor(const AlarmData &alarm)
+{
+    const RepeatMode repeat = alarm.repeatMode;
+    if (repeat == RepeatMode::SpecificDays)
+        return alarm.days.isEmpty() ? "Once" : alarm.days.join(", ");
+    if (repeat == RepeatMode::Never || repeat == RepeatMode::Once)
+        return "Once";
+
+    return repeatModeToString(repeat);
+}
+} // namespace
+
 AlarmItemWidget::AlarmItemWidget(const AlarmData &data, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::AlarmItemWidget)
@@ -49,30 +62,22 @@ void AlarmItemWidget::setAlarmData(const AlarmData &data)
     ui->labelTime->setText(alarm.time.toString("HH:mm"));
     ui->labelName->setText(alarm.name.isEmpty() ? "Alarm" : alarm.name);
 
-    QString repeatText;
-    if (alarm.repeatMode == "Every day")
-        repeatText = "Every day";
-    else if (alarm.repeatMode == "Weekdays")
-        repeatText = "Weekdays";
-    else if (alarm.repeatMode == "Weekends")
-        repeatText = "Weekends";
-    else if (alarm.repeatMode == "Specific days" || alarm.repeatMode == "Specific Days") {
-        if (!alarm.days.isEmpty())
-            repeatText = alarm.days.join(", ");
-        else
-            repeatText = "Once";
-    }
-    else if (alarm.repeatMode == "Never" || alarm.repeatMode == "Once")
-        repeatText = "Once";
-
-    ui->labelRepeat->setText(repeatText);
+    ui->labelRepeat->setText(repeatTextFor(alarm));
 
     QIcon icon(alarm.enabled
                    ? QIcon(":/resources/icons/toggle_on.png")
                    : QIcon(":/resources/icons/toggle_off.png"));
     ui->btnToggle->setIcon(icon);
-    qDebug() << "RepeatMode:" << alarm.repeatMode << "Days:" << alarm.days;
+    qDebug() << "RepeatMode:" << repeatModeToString(alarm.repeatMode) << "Days:" << alarm.days;
 
+}
+
+void AlarmItemWidget::setHovered(bool hovered)
+{
+    setProperty("hovered", hovered);
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
 }
 
 bool AlarmItemWidget::event(QEvent *e)
@@ -80,13 +85,11 @@ bool AlarmItemWidget::event(QEvent *e)
     switch (e->type()) {
     case QEvent::Enter:
     case QEvent::HoverEnter:
-        setProperty("hovered", true);
-        style()->unpolish(this); style()->polish(this); update();
+        setHovered(true);
         break;
     case QEvent::Leave:
     case QEvent::HoverLeave:
-        setProperty("hovered", false);
-        style()->unpolish(this); style()->polish(this); update();
+        setHovered(false);
         break;
     default:
         break;
@@ -97,11 +100,9 @@ bool AlarmItemWidget::event(QEvent *e)
 bool AlarmItemWidget::eventFilter(QObject *obj, QEvent *e)
 {
     if (e->type() == QEvent::Enter || e->type() == QEvent::HoverEnter) {
-        setProperty("hovered", true);
-        style()->unpolish(this); style()->polish(this); update();
+        setHovered(true);
     } else if (e->type() == QEvent::Leave || e->type() == QEvent::HoverLeave) {
-        setProperty("hovered", false);
-        style()->unpolish(this); style()->polish(this); update();
+        setHovered(false);
     }
     return QWidget::eventFilter(obj, e);
 }

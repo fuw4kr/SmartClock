@@ -2,6 +2,7 @@
 #include "../thememanager.h"
 #include <QPainter>
 #include <QtMath>
+#include <QDebug>
 
 AnalogStopwatchDial::AnalogStopwatchDial(QWidget *parent)
     : QWidget(parent)
@@ -19,7 +20,7 @@ void AnalogStopwatchDial::show() {
         qDebug() << "[TEST_MODE] Suppressed Settings dialog";
         return;
     }
-    this->show();
+    QWidget::show();
 }
 
 void AnalogStopwatchDial::paintEvent(QPaintEvent *)
