@@ -89,7 +89,6 @@ jobs:
                       <li><a href="uml/class/classAfterRef.html"> Class Diagram <span class="tag new">MVC & Patterns</span></a></li>
                       <li><a href="uml/communication/communicationAfterRef.html"> Communication Diagram <span class="tag new">Strategy</span></a></li>
                   </ul>
-
               </div>
           </body>
           </html>
