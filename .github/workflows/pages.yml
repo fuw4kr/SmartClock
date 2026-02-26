@@ -1,0 +1,108 @@
+name: Deploy Docs and UML to Pages
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen
+
+      - name: Generate Doxygen Documentation
+        run: doxygen Doxyfile
+
+      - name: Prepare Public Directory
+        run: |
+          mkdir -p public
+          mv docs/html public/doxygen
+          # Копіюємо всі твої UML діаграми
+          cp -r uml public/uml
+
+      - name: Generate Hub index.html
+        run: |
+          cat << 'EOF' > public/index.html
+          <!DOCTYPE html>
+          <html lang="uk">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>SmartClock Project Hub</title>
+              <style>
+                  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 40px; }
+                  .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+                  h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+                  h2 { color: #2980b9; margin-top: 30px; }
+                  ul { list-style-type: none; padding: 0; }
+                  li { margin: 10px 0; background: #ecf0f1; border-radius: 5px; transition: 0.3s; }
+                  li:hover { background: #d6eaf8; transform: translateX(5px); }
+                  a { text-decoration: none; color: #2c3e50; display: block; padding: 12px 15px; font-weight: 500; }
+                  .tag { float: right; background: #e74c3c; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; }
+                  .tag.new { background: #27ae60; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>SmartClock: Документація та Архітектура</h1>
+          
+                  <h2>1. Документація коду (Doxygen)</h2>
+                  <ul>
+                      <li><a href="doxygen/index.html">Відкрити C++ API Документацію</a></li>
+                  </ul>
+
+                  <h2>2. Базові UML Діаграми</h2>
+                  <ul>
+                      <li><a href="uml/use_case/use_case.html"> Use Case Diagram</a></li>
+                      <li><a href="uml/activity/activity.html">️ Activity Diagram</a></li>
+                      <li><a href="uml/class/class.html"> Cass Diagram</a></li>
+                      <li><a href="uml/component/component.html"> Component Diagram</a></li>
+                      <li><a href="uml/sequence/sequence.html"> Sequence Diagram</a></li>
+                      <li><a href="uml/communication/communication.html"> Communication Diagram (До рефакторингу)</a></li>
+                      <li><a href="uml/timing/timing.html"> Timing Diagram</a></li>
+                      <li><a href="uml/state/state.html"> State Diagram</a></li>
+                       <li><a href="uml/object/object.html">Object Diagram</a></li>
+                      <li><a href="uml/deployment/deployment.html">Deployment Diagram</a></li>
+                      <li><a href="uml/interaction_overview/interaction_overview.html"> Interaction Overview</a></li>
+                  </ul>
+                  <h2>3. UML Діаграми (Після Рефакторингу)</h2>
+                  <ul>
+                      <li><a href="uml/component/componentAfterRef.html"> Component Diagram <span class="tag new">Clean Architecture</span></a></li>
+                      <li><a href="uml/class/classAfterRef.html"> Class Diagram <span class="tag new">MVC & Patterns</span></a></li>
+                      <li><a href="uml/communication/communicationAfterRef.html"> Communication Diagram <span class="tag new">Strategy</span></a></li>
+                  </ul>
+
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
