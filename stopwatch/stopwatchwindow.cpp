@@ -1,3 +1,13 @@
+/**
+ * @file stopwatchwindow.cpp
+ * @brief Definitions for stopwatchwindow.
+ * @details Implements logic declared in the corresponding header for stopwatchwindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "stopwatchwindow.h"
 #include "ui_stopwatchwindow.h"
 #include <QSettings>

@@ -1,3 +1,13 @@
+/**
+ * @file alarmsettingsdialog.cpp
+ * @brief Definitions for alarmsettingsdialog.
+ * @details Implements logic declared in the corresponding header for alarmsettingsdialog.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "alarmsettingsdialog.h"
 #include "ui_alarmsettingsdialog.h"
 #include <QFileDialog>

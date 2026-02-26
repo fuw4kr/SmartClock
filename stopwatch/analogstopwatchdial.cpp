@@ -1,3 +1,13 @@
+/**
+ * @file analogstopwatchdial.cpp
+ * @brief Definitions for analogstopwatchdial.
+ * @details Implements logic declared in the corresponding header for analogstopwatchdial.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "analogstopwatchdial.h"
 #include "../thememanager.h"
 #include <QPainter>

@@ -1,3 +1,13 @@
+/**
+ * @file clockcontroller.cpp
+ * @brief Definitions for clockcontroller.
+ * @details Implements logic declared in the corresponding header for clockcontroller.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "clockcontroller.h"
 #include "../clock/clockwindow.h"
 #include "../clock/jsonclockstorage.h"

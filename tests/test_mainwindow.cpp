@@ -1,3 +1,13 @@
+/**
+ * @file test_mainwindow.cpp
+ * @brief Definitions for test_mainwindow.
+ * @details Implements logic declared in the corresponding header for test_mainwindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include <gtest/gtest.h>
 #include <QMetaObject>
 #include <QApplication>

@@ -1,3 +1,13 @@
+/**
+ * @file jsonstopwatchstorage.cpp
+ * @brief Definitions for jsonstopwatchstorage.
+ * @details Implements logic declared in the corresponding header for jsonstopwatchstorage.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "jsonstopwatchstorage.h"
 #include <QStandardPaths>
 #include <QDir>

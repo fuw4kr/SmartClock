@@ -1,3 +1,13 @@
+/**
+ * @file alarmwindow.cpp
+ * @brief Definitions for alarmwindow.
+ * @details Implements logic declared in the corresponding header for alarmwindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "alarmwindow.h"
 #include "ui_alarmwindow.h"
 #include "alarmsettingsdialog.h"

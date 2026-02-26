@@ -1,3 +1,13 @@
+/**
+ * @file timermanager.cpp
+ * @brief Definitions for timermanager.
+ * @details Implements logic declared in the corresponding header for timermanager.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "timermanager.h"
 #include "jsontimerstorage.h"
 #include "itimerstorage.h"

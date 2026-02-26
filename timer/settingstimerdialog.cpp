@@ -1,3 +1,13 @@
+/**
+ * @file settingstimerdialog.cpp
+ * @brief Definitions for settingstimerdialog.
+ * @details Implements logic declared in the corresponding header for settingstimerdialog.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "settingstimerdialog.h"
 #include "ui_settingstimerdialog.h"
 #include <QFileDialog>

@@ -1,3 +1,13 @@
+/**
+ * @file alarmmanager.cpp
+ * @brief Definitions for alarmmanager.
+ * @details Implements logic declared in the corresponding header for alarmmanager.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "alarmmanager.h"
 #include "jsonalarmstorage.h"
 #include <QTimer>

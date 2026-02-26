@@ -1,3 +1,13 @@
+/**
+ * @file test_timer.cpp
+ * @brief Definitions for test_timer.
+ * @details Implements logic declared in the corresponding header for test_timer.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include <gtest/gtest.h>
 #include <QTest>
 #include <QSignalSpy>

@@ -1,3 +1,13 @@
+/**
+ * @file clocksettingsdialog.cpp
+ * @brief Definitions for clocksettingsdialog.
+ * @details Implements logic declared in the corresponding header for clocksettingsdialog.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "clocksettingsdialog.h"
 #include "ui_clocksettingsdialog.h"
 #include <QTimeZone>
