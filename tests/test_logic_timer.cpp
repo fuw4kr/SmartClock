@@ -1,3 +1,13 @@
+/**
+ * @file test_logic_timer.cpp
+ * @brief Definitions for test_logic_timer.
+ * @details Implements logic declared in the corresponding header for test_logic_timer.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include <gtest/gtest.h>
 #include <QDateTime>
 #include <QTemporaryDir>

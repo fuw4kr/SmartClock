@@ -1,3 +1,13 @@
+/**
+ * @file historytimerwindow.cpp
+ * @brief Definitions for historytimerwindow.
+ * @details Implements logic declared in the corresponding header for historytimerwindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "historytimerwindow.h"
 #include "ui_historytimerwindow.h"
 #include <QMessageBox>

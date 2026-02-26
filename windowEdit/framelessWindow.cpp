@@ -1,3 +1,13 @@
+/**
+ * @file framelessWindow.cpp
+ * @brief Definitions for framelessWindow.
+ * @details Implements logic declared in the corresponding header for framelessWindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "framelesswindow.h"
 #include <QApplication>
 #include <QScreen>

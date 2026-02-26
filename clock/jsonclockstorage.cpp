@@ -1,3 +1,13 @@
+/**
+ * @file jsonclockstorage.cpp
+ * @brief Definitions for jsonclockstorage.
+ * @details Implements logic declared in the corresponding header for jsonclockstorage.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "jsonclockstorage.h"
 #include "clockmodel.h"
 #include <QStandardPaths>

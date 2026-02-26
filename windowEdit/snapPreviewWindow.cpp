@@ -1,3 +1,13 @@
+/**
+ * @file snapPreviewWindow.cpp
+ * @brief Definitions for snapPreviewWindow.
+ * @details Implements logic declared in the corresponding header for snapPreviewWindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "snappreviewwindow.h"
 #include <QGuiApplication>
 

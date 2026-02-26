@@ -1,3 +1,13 @@
+/**
+ * @file stopwatchcontroller.cpp
+ * @brief Definitions for stopwatchcontroller.
+ * @details Implements logic declared in the corresponding header for stopwatchcontroller.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "stopwatchcontroller.h"
 #include "../stopwatch/stopwatchwindow.h"
 #include "../stopwatch/jsonstopwatchstorage.h"

@@ -1,3 +1,13 @@
+/**
+ * @file test_theme.cpp
+ * @brief Definitions for test_theme.
+ * @details Implements logic declared in the corresponding header for test_theme.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include <gtest/gtest.h>
 #include <QApplication>
 #include <QSignalSpy>

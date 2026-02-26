@@ -1,3 +1,13 @@
+/**
+ * @file timerwindow.cpp
+ * @brief Definitions for timerwindow.
+ * @details Implements logic declared in the corresponding header for timerwindow.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "timerwindow.h"
 #include "ui_TimerWindow.h"
 #include "timereditdialog.h"

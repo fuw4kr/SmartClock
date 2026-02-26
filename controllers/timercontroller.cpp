@@ -1,3 +1,13 @@
+/**
+ * @file timercontroller.cpp
+ * @brief Definitions for timercontroller.
+ * @details Implements logic declared in the corresponding header for timercontroller.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "timercontroller.h"
 #include "../timer/timerwindow.h"
 #include <QCoreApplication>

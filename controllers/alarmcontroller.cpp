@@ -1,3 +1,13 @@
+/**
+ * @file alarmcontroller.cpp
+ * @brief Definitions for alarmcontroller.
+ * @details Implements logic declared in the corresponding header for alarmcontroller.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "alarmcontroller.h"
 #include "../alarm/alarmwindow.h"
 #include <QCoreApplication>

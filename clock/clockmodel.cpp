@@ -1,3 +1,13 @@
+/**
+ * @file clockmodel.cpp
+ * @brief Definitions for clockmodel.
+ * @details Implements logic declared in the corresponding header for clockmodel.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "clockmodel.h"
 #include "jsonclockstorage.h"
 #include <QDateTime>

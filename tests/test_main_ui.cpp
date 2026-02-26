@@ -1,3 +1,13 @@
+/**
+ * @file test_main_ui.cpp
+ * @brief Definitions for test_main_ui.
+ * @details Implements logic declared in the corresponding header for test_main_ui.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include <gtest/gtest.h>
 #include <QApplication>
 #include <QStandardPaths>

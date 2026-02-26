@@ -1,3 +1,13 @@
+/**
+ * @file soundalarmaction.cpp
+ * @brief Definitions for soundalarmaction.
+ * @details Implements logic declared in the corresponding header for soundalarmaction.
+ * @note Keep implementation and header documentation consistent.
+ * @warning Update documentation when behavior changes.
+ * @sa SmartClock
+ * @date 2026-02-26
+ */
+
 #include "soundalarmaction.h"
 #include <QObject>
 #include <QSoundEffect>
