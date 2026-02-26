@@ -76,7 +76,7 @@ jobs:
                       <li><a href="uml/class/class.html"> Cass Diagram</a></li>
                       <li><a href="uml/component/component.html"> Component Diagram</a></li>
                       <li><a href="uml/sequence/sequence.html"> Sequence Diagram</a></li>
-                      <li><a href="uml/communication/communication.html"> Communication Diagram (До рефакторингу)</a></li>
+                      <li><a href="uml/communication/communication.html"> Communication Diagram</a></li>
                       <li><a href="uml/timing/timing.html"> Timing Diagram</a></li>
                       <li><a href="uml/state/state.html"> State Diagram</a></li>
                        <li><a href="uml/object/object.html">Object Diagram</a></li>
