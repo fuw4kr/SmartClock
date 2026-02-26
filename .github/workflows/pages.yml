@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Doxygen
-        run: sudo apt-get update && sudo apt-get install -y doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
 
       - name: Generate Doxygen Documentation
         run: doxygen Doxyfile
@@ -66,7 +66,7 @@ jobs:
           
                   <h2>1. Документація коду (Doxygen)</h2>
                   <ul>
-                      <li><a href="doxygen/index.html">Відкрити C++ API Документацію</a></li>
+                      <li><a href="doxygen/index.html">Відкрити Документацію</a></li>
                   </ul>
 
                   <h2>2. Базові UML Діаграми</h2>
